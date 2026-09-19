@@ -1,12 +1,11 @@
 /**
  * @fileoverview TodoItem component for the FocusList To-Do application.
  * Renders an individual task with toggle, edit, and delete capabilities.
- * Supports inline editing with keyboard shortcuts (Enter to save, Escape to cancel).
  * @module components/TodoItem
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Trash2, CheckCircle2, Circle, Pencil, Check, X } from 'lucide-react';
+import { TrashIcon, CheckCircleIcon, CircleIcon, PencilIcon, CheckIcon, XIcon } from './Icons';
 import type { Todo } from '../types';
 import { PRIORITY_COLORS } from '../utils/constants';
 
@@ -27,10 +26,6 @@ interface TodoItemProps {
 /**
  * Renders a single task item with completion toggle, inline editing, priority badge,
  * and delete functionality. Supports full keyboard navigation and accessibility.
- *
- * Keyboard interactions:
- * - **Enter**: Save the edited task title.
- * - **Escape**: Cancel editing and revert to the original title.
  *
  * @param {TodoItemProps} props - Component props.
  * @returns {React.ReactElement} The rendered task item.
@@ -111,13 +106,13 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
           data-testid="toggle-task"
         >
           {todo.completed ? (
-            <CheckCircle2 className="w-6 h-6 text-green-500" aria-hidden="true" />
+            <CheckCircleIcon className="w-6 h-6 text-green-500" aria-hidden={true} />
           ) : (
-            <Circle className="w-6 h-6" aria-hidden="true" />
+            <CircleIcon className="w-6 h-6" aria-hidden={true} />
           )}
         </button>
 
-        {/* Task content — edit mode or display mode */}
+        {/* Task content */}
         {isEditing ? (
           <div className="flex-1 flex gap-2 items-center">
             <label htmlFor={`edit-${todo.id}`} className="sr-only">
@@ -141,7 +136,7 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
               aria-label="Save edit"
               data-testid="save-edit-button"
             >
-              <Check className="w-4 h-4" aria-hidden="true" />
+              <CheckIcon className="w-4 h-4" aria-hidden={true} />
             </button>
             <button
               onClick={handleCancel}
@@ -149,7 +144,7 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
               aria-label="Cancel edit"
               data-testid="cancel-edit-button"
             >
-              <X className="w-4 h-4" aria-hidden="true" />
+              <XIcon className="w-4 h-4" aria-hidden={true} />
             </button>
           </div>
         ) : (
@@ -175,7 +170,7 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
         )}
       </div>
 
-      {/* Action buttons — visible on hover or focus */}
+      {/* Action buttons */}
       {!isEditing && (
         <div className="flex gap-1 flex-shrink-0 ml-2 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity">
           <button
@@ -184,7 +179,7 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
             aria-label={`Edit task: ${todo.text}`}
             data-testid="edit-task-button"
           >
-            <Pencil className="w-4 h-4" aria-hidden="true" />
+            <PencilIcon className="w-4 h-4" aria-hidden={true} />
           </button>
           <button
             onClick={() => onDelete(todo.id)}
@@ -192,7 +187,7 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
             aria-label={`Delete task: ${todo.text}`}
             data-testid="delete-task-button"
           >
-            <Trash2 className="w-4 h-4" aria-hidden="true" />
+            <TrashIcon className="w-4 h-4" aria-hidden={true} />
           </button>
         </div>
       )}

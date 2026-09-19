@@ -1,12 +1,11 @@
 /**
  * @fileoverview TodoFilters component for the FocusList To-Do application.
- * Provides search, status filtering, and priority filtering controls
- * that update the displayed task list in real time.
+ * Provides search, status filtering, and priority filtering controls.
  * @module components/TodoFilters
  */
 
 import React from 'react';
-import { Search } from 'lucide-react';
+import { SearchIcon } from './Icons';
 import type { Priority, StatusFilter } from '../types';
 import { STATUS_FILTER_OPTIONS, PRIORITY_OPTIONS } from '../utils/constants';
 
@@ -30,8 +29,6 @@ interface TodoFiltersProps {
 
 /**
  * Renders the search and filtering controls for the task list.
- * Includes a search input, status filter dropdown, and priority filter dropdown.
- * All controls are fully accessible with proper labels and keyboard support.
  *
  * @param {TodoFiltersProps} props - Component props.
  * @returns {React.ReactElement} The rendered filter controls.
@@ -50,11 +47,10 @@ export const TodoFilters: React.FC<TodoFiltersProps> = React.memo(function TodoF
       aria-label="Filter and search tasks"
       data-testid="todo-filters"
     >
-      {/* Search Input */}
       <div className="relative flex-1">
-        <Search
+        <SearchIcon
           className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none"
-          aria-hidden="true"
+          aria-hidden={true}
         />
         <label htmlFor="search-tasks" className="sr-only">
           Search tasks by title
@@ -71,7 +67,6 @@ export const TodoFilters: React.FC<TodoFiltersProps> = React.memo(function TodoF
         />
       </div>
 
-      {/* Filter Dropdowns */}
       <div className="flex gap-2">
         <div>
           <label htmlFor="status-filter" className="sr-only">

@@ -4,16 +4,6 @@
  * FocusList allows users to create, manage, and organize their daily tasks
  * with priority levels, search, filtering, and data persistence.
  *
- * Features:
- * - Task CRUD (Create, Read, Update, Delete)
- * - Priority assignment (High, Medium, Low)
- * - Real-time search and filtering
- * - Task statistics dashboard with progress bar
- * - Dark mode with system preference detection
- * - Keyboard shortcuts for power users
- * - LocalStorage persistence
- * - Full accessibility (ARIA, keyboard navigation)
- *
  * @module App
  */
 
@@ -25,7 +15,7 @@ import { TodoFilters } from './components/TodoFilters';
 import { useTodos } from './hooks/useTodos';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { THEME_STORAGE_KEY, KEYBOARD_SHORTCUTS } from './utils/constants';
-import { Sun, Moon, Trash2, Keyboard } from 'lucide-react';
+import { SunIcon, MoonIcon, TrashIcon, KeyboardIcon } from './components/Icons';
 
 /**
  * The root application component. Composes all feature components and manages
@@ -81,21 +71,18 @@ function App() {
    */
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Skip if user is typing in an input, textarea, or select
       const tag = (e.target as HTMLElement).tagName?.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
 
       switch (e.key.toLowerCase()) {
         case KEYBOARD_SHORTCUTS.NEW_TASK: {
           e.preventDefault();
-          const taskInput = document.getElementById('new-task-input');
-          taskInput?.focus();
+          document.getElementById('new-task-input')?.focus();
           break;
         }
         case KEYBOARD_SHORTCUTS.SEARCH: {
           e.preventDefault();
-          const searchInput = document.getElementById('search-tasks');
-          searchInput?.focus();
+          document.getElementById('search-tasks')?.focus();
           break;
         }
         case KEYBOARD_SHORTCUTS.TOGGLE_THEME: {
@@ -140,7 +127,6 @@ function App() {
             </p>
           </div>
 
-          {/* Theme toggle & shortcuts */}
           <div className="flex items-center justify-center gap-2">
             <button
               onClick={() => setShowShortcuts((v) => !v)}
@@ -148,7 +134,7 @@ function App() {
               aria-label="Toggle keyboard shortcuts help"
               data-testid="shortcuts-toggle"
             >
-              <Keyboard className="w-5 h-5" aria-hidden="true" />
+              <KeyboardIcon className="w-5 h-5" aria-hidden={true} />
             </button>
             <button
               onClick={toggleDarkMode}
@@ -157,9 +143,9 @@ function App() {
               data-testid="theme-toggle"
             >
               {darkMode ? (
-                <Sun className="w-5 h-5" aria-hidden="true" />
+                <SunIcon className="w-5 h-5" aria-hidden={true} />
               ) : (
-                <Moon className="w-5 h-5" aria-hidden="true" />
+                <MoonIcon className="w-5 h-5" aria-hidden={true} />
               )}
             </button>
           </div>
@@ -217,7 +203,7 @@ function App() {
               aria-label={`Clear ${stats.completed} completed tasks`}
               data-testid="clear-completed-button"
             >
-              <Trash2 className="w-4 h-4" aria-hidden="true" />
+              <TrashIcon className="w-4 h-4" aria-hidden={true} />
               Clear Completed ({stats.completed})
             </button>
           </div>
@@ -226,7 +212,7 @@ function App() {
         {/* ─── Footer ─── */}
         <footer className="mt-8 pt-4 border-t border-gray-100 dark:border-gray-700 text-center">
           <p className="text-xs text-gray-400 dark:text-gray-500">
-            FocusList — Built with React, TypeScript & Tailwind CSS
+            FocusList — Built with React, TypeScript &amp; Tailwind CSS
           </p>
         </footer>
       </main>

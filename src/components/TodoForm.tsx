@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useRef } from 'react';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircleIcon } from './Icons';
 import type { Priority } from '../types';
 import { PRIORITY_OPTIONS, MAX_TASK_LENGTH } from '../utils/constants';
 
@@ -20,7 +20,6 @@ interface TodoFormProps {
 /**
  * Renders the task creation form with a text input, priority selector, and submit button.
  * Validates input before submission and provides visual feedback for disabled states.
- * The input field can be focused programmatically via the exposed ref (keyboard shortcut).
  *
  * @param {TodoFormProps} props - Component props.
  * @returns {React.ReactElement} The rendered task creation form.
@@ -94,7 +93,7 @@ export const TodoForm: React.FC<TodoFormProps> = React.memo(function TodoForm({ 
         aria-label="Add task"
         data-testid="add-task-button"
       >
-        <PlusCircle className="w-4 h-4" aria-hidden="true" />
+        <PlusCircleIcon className="w-4 h-4" aria-hidden={true} />
         <span className="hidden sm:inline">Add Task</span>
       </button>
     </form>
