@@ -1,6 +1,5 @@
 /**
  * @fileoverview TodoItem component for the FocusList To-Do application.
- * Renders an individual task with toggle, edit, and delete capabilities.
  * @module components/TodoItem
  */
 
@@ -9,27 +8,13 @@ import { TrashIcon, CheckCircleIcon, CircleIcon, PencilIcon, CheckIcon, XIcon } 
 import type { Todo } from '../types';
 import { PRIORITY_COLORS } from '../utils/constants';
 
-/**
- * Props for the TodoItem component.
- */
 interface TodoItemProps {
-  /** The todo object to render. */
   todo: Todo;
-  /** Callback to toggle the task's completion status. */
   onToggle: (id: string) => void;
-  /** Callback to permanently delete the task. */
   onDelete: (id: string) => void;
-  /** Callback to update the task's title text. */
   onEdit: (id: string, newText: string) => void;
 }
 
-/**
- * Renders a single task item with completion toggle, inline editing, priority badge,
- * and delete functionality. Supports full keyboard navigation and accessibility.
- *
- * @param {TodoItemProps} props - Component props.
- * @returns {React.ReactElement} The rendered task item.
- */
 export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
   todo,
   onToggle,
@@ -40,7 +25,6 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
   const [editValue, setEditValue] = useState(todo.text);
   const editInputRef = useRef<HTMLInputElement>(null);
 
-  /** Focus the edit input when entering edit mode. */
   useEffect(() => {
     if (isEditing && editInputRef.current) {
       editInputRef.current.focus();
@@ -48,7 +32,6 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
     }
   }, [isEditing]);
 
-  /** Saves the edited title if it's valid and exits edit mode. */
   const handleSave = useCallback(() => {
     const trimmed = editValue.trim();
     if (trimmed && trimmed !== todo.text) {
@@ -57,30 +40,21 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
     setIsEditing(false);
   }, [editValue, todo.id, todo.text, onEdit]);
 
-  /** Cancels editing and reverts to the original title. */
   const handleCancel = useCallback(() => {
     setEditValue(todo.text);
     setIsEditing(false);
   }, [todo.text]);
 
-  /**
-   * Handles keyboard interactions during edit mode.
-   * @param {React.KeyboardEvent} e - The keyboard event.
-   */
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        handleSave();
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        handleCancel();
-      }
-    },
-    [handleSave, handleCancel]
-  );
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSave();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleCancel();
+    }
+  }, [handleSave, handleCancel]);
 
-  /** Enters edit mode and initializes the edit value. */
   const startEditing = useCallback(() => {
     setEditValue(todo.text);
     setIsEditing(true);
@@ -88,19 +62,18 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
 
   return (
     <li
-      className={`group flex items-center justify-between p-3 sm:p-4 rounded-xl border transition-all duration-200 ${
+      className={`group flex items-center justify-between p-3 sm:p-4 rounded-xl border transition-all duration-200 animate-slide-up ${
         todo.completed
           ? 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 opacity-70'
-          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md'
+          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600'
       }`}
       data-testid="todo-item"
       aria-label={`Task: ${todo.text}, Priority: ${todo.priority}, ${todo.completed ? 'Completed' : 'Active'}`}
     >
       <div className="flex items-center gap-3 flex-1 overflow-hidden">
-        {/* Toggle completion */}
         <button
           onClick={() => onToggle(todo.id)}
-          className="flex-shrink-0 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-full transition-colors p-0.5"
+          className="flex-shrink-0 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-full transition-colors p-0.5 active:scale-90"
           aria-label={todo.completed ? 'Mark task as incomplete' : 'Mark task as complete'}
           aria-pressed={todo.completed}
           data-testid="toggle-task"
@@ -112,12 +85,9 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
           )}
         </button>
 
-        {/* Task content */}
         {isEditing ? (
           <div className="flex-1 flex gap-2 items-center">
-            <label htmlFor={`edit-${todo.id}`} className="sr-only">
-              Edit task title
-            </label>
+            <label htmlFor={`edit-${todo.id}`} className="sr-only">Edit task title</label>
             <input
               ref={editInputRef}
               id={`edit-${todo.id}`}
@@ -132,7 +102,7 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
             />
             <button
               onClick={handleSave}
-              className="text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 p-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+              className="text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 p-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 active:scale-90"
               aria-label="Save edit"
               data-testid="save-edit-button"
             >
@@ -140,7 +110,7 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
             </button>
             <button
               onClick={handleCancel}
-              className="text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 p-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500"
+              className="text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 p-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 active:scale-90"
               aria-label="Cancel edit"
               data-testid="cancel-edit-button"
             >
@@ -170,12 +140,11 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
         )}
       </div>
 
-      {/* Action buttons */}
       {!isEditing && (
         <div className="flex gap-1 flex-shrink-0 ml-2 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity">
           <button
             onClick={startEditing}
-            className="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-1.5 transition-colors"
+            className="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-1.5 transition-colors active:scale-90"
             aria-label={`Edit task: ${todo.text}`}
             data-testid="edit-task-button"
           >
@@ -183,7 +152,7 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
           </button>
           <button
             onClick={() => onDelete(todo.id)}
-            className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded-lg p-1.5 transition-colors"
+            className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded-lg p-1.5 transition-colors active:scale-90"
             aria-label={`Delete task: ${todo.text}`}
             data-testid="delete-task-button"
           >

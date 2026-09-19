@@ -10,6 +10,18 @@
     <meta name="robots" content="index, follow" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✅</text></svg>" />
     <title>FocusList — To-Do Application</title>
+    <!-- Prevent Dark Mode Flash (FOUC) -->
+    <script>
+      (function() {
+        try {
+          var theme = localStorage.getItem('focuslist-theme');
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (theme ? JSON.parse(theme) : prefersDark) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch(e) {}
+      })();
+    </script>
   </head>
   <body class="bg-gray-50 dark:bg-gray-900 transition-colors">
     <noscript>

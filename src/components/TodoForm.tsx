@@ -1,44 +1,25 @@
 /**
  * @fileoverview TodoForm component for the FocusList To-Do application.
- * Provides the task creation interface with title input and priority selection.
  * @module components/TodoForm
  */
 
 import React, { useState, useRef } from 'react';
 import { PlusCircleIcon } from './Icons';
-import type { Priority } from '../types';
+import { useTodoContext } from '../context/TodoContext';
 import { PRIORITY_OPTIONS, MAX_TASK_LENGTH } from '../utils/constants';
 
-/**
- * Props for the TodoForm component.
- */
-interface TodoFormProps {
-  /** Callback invoked when the user submits a new task. */
-  onAdd: (text: string, priority: Priority) => void;
-}
-
-/**
- * Renders the task creation form with a text input, priority selector, and submit button.
- * Validates input before submission and provides visual feedback for disabled states.
- *
- * @param {TodoFormProps} props - Component props.
- * @returns {React.ReactElement} The rendered task creation form.
- */
-export const TodoForm: React.FC<TodoFormProps> = React.memo(function TodoForm({ onAdd }) {
+export const TodoForm: React.FC = React.memo(function TodoForm() {
+  const { addTodo } = useTodoContext();
   const [inputValue, setInputValue] = useState('');
-  const [priorityInput, setPriorityInput] = useState<Priority>('Medium');
+  const [priorityInput, setPriorityInput] = useState<'High' | 'Medium' | 'Low'>('Medium');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  /**
-   * Handles form submission. Validates, submits, and resets the form.
-   * @param {React.FormEvent} e - The form submit event.
-   */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = inputValue.trim();
     if (!trimmed) return;
 
-    onAdd(trimmed, priorityInput);
+    addTodo(trimmed, priorityInput);
     setInputValue('');
     setPriorityInput('Medium');
     inputRef.current?.focus();
@@ -47,13 +28,11 @@ export const TodoForm: React.FC<TodoFormProps> = React.memo(function TodoForm({ 
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex gap-2 mb-6 flex-wrap sm:flex-nowrap bg-white dark:bg-gray-800 p-1.5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+      className="flex gap-2 mb-6 flex-wrap sm:flex-nowrap bg-white dark:bg-gray-800 p-1.5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 animate-fade-in"
       aria-label="Create a new task"
       data-testid="todo-form"
     >
-      <label htmlFor="new-task-input" className="sr-only">
-        Task title
-      </label>
+      <label htmlFor="new-task-input" className="sr-only">Task title</label>
       <input
         ref={inputRef}
         id="new-task-input"
@@ -68,28 +47,24 @@ export const TodoForm: React.FC<TodoFormProps> = React.memo(function TodoForm({ 
         autoComplete="off"
       />
 
-      <label htmlFor="priority-select" className="sr-only">
-        Priority level
-      </label>
+      <label htmlFor="priority-select" className="sr-only">Priority level</label>
       <select
         id="priority-select"
         value={priorityInput}
-        onChange={(e) => setPriorityInput(e.target.value as Priority)}
+        onChange={(e) => setPriorityInput(e.target.value as 'High' | 'Medium' | 'Low')}
         className="px-3 py-2 border-l border-gray-200 dark:border-gray-600 bg-transparent dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg text-sm cursor-pointer"
         aria-label="Select task priority"
         data-testid="priority-select"
       >
         {PRIORITY_OPTIONS.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
         ))}
       </select>
 
       <button
         type="submit"
         disabled={!inputValue.trim()}
-        className="bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 font-medium"
+        className="bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 font-medium shadow-sm"
         aria-label="Add task"
         data-testid="add-task-button"
       >

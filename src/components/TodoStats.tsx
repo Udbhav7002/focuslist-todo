@@ -1,31 +1,13 @@
 /**
  * @fileoverview TodoStats component for the FocusList To-Do application.
- * Displays real-time statistics about the user's task list including
- * total tasks, completed tasks, and pending tasks counts.
  * @module components/TodoStats
  */
 
 import React from 'react';
-import type { TodoStats as TodoStatsType } from '../types';
+import { useTodoContext } from '../context/TodoContext';
 
-/**
- * Props for the TodoStats component.
- */
-interface TodoStatsProps {
-  /** The computed statistics object containing total, completed, and pending counts. */
-  stats: TodoStatsType;
-}
-
-/**
- * Renders a responsive statistics dashboard showing task counts.
- * Uses an ARIA live region so screen readers announce updates when task data changes.
- * Wrapped in React.memo to prevent unnecessary re-renders when stats haven't changed.
- *
- * @param {TodoStatsProps} props - Component props.
- * @returns {React.ReactElement} The rendered statistics dashboard.
- */
-export const TodoStats: React.FC<TodoStatsProps> = React.memo(function TodoStats({ stats }) {
-  /** Completion percentage for the progress bar (0–100). */
+export const TodoStats: React.FC = React.memo(function TodoStats() {
+  const { stats } = useTodoContext();
   const completionPercent = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
 
   return (
@@ -34,9 +16,8 @@ export const TodoStats: React.FC<TodoStatsProps> = React.memo(function TodoStats
       role="status"
       aria-live="polite"
       data-testid="task-statistics"
-      className="mb-6"
+      className="mb-6 animate-fade-in"
     >
-      {/* Stat Cards */}
       <div className="grid grid-cols-3 gap-3 mb-4 text-center">
         <div
           className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 p-3 rounded-xl border border-blue-200/50 dark:border-blue-700/50 shadow-sm"
@@ -67,7 +48,6 @@ export const TodoStats: React.FC<TodoStatsProps> = React.memo(function TodoStats
         </div>
       </div>
 
-      {/* Progress Bar */}
       <div className="w-full" data-testid="progress-bar">
         <div className="flex justify-between items-center mb-1">
           <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Progress</span>
