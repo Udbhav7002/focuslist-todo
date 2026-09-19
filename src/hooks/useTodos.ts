@@ -166,7 +166,7 @@ export function useTodos(): UseTodosReturn {
   }, [setTodos]);
 
   const updateTodo = useCallback<UseTodosReturn['updateTodo']>(
-    (id: string, patch) => {
+    (id, patch) => {
       const cleaned: typeof patch = { ...patch };
       if (typeof cleaned.text === 'string') {
         const sanitized = sanitizeInput(cleaned.text);
