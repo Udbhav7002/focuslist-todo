@@ -351,7 +351,7 @@ function App(): ReactElement {
           sort={filters.sort}
           onToggle={toggleTodo}
           onDelete={handleDelete}
-          onEdit={(id, text) => updateTodo(id, { text })}
+          onEdit={updateTodo}
           onMove={moveTodo}
           onReorder={reorderTodos}
           onCreateFirst={() => focusById('new-task-input')}

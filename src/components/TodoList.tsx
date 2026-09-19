@@ -19,7 +19,7 @@ export interface TodoListProps {
   sort: SortOption;
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
-  onEdit: (id: string, text: string) => void;
+  onEdit: (id: string, patch: Partial<Pick<Todo, 'text' | 'priority' | 'dueDate' | 'tags'>>) => void;
   onMove: (id: string, direction: -1 | 1) => void;
   onReorder: (sourceId: string, targetId: string) => void;
   onCreateFirst: () => void;
