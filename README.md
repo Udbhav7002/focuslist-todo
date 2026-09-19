@@ -1,39 +1,79 @@
 # FocusList To-Do App
 
-A clean, functional, and accessible To-Do application built for the **FocusList Challenge**. 
+> **Build. Organize. Simplify.**
+> A frontend-only, highly accessible, and fully responsive To-Do application built for the FocusList Challenge.
 
-## Features
-- **Frontend-only**: Built entirely with React.
-- **Local Persistence**: Tasks are saved to \`localStorage\`, meaning your tasks remain even after a page reload.
-- **Accessible**: Full ARIA labels, semantic HTML, and keyboard navigation support.
-- **Clean Architecture**: Built with React, TypeScript, and Tailwind CSS.
-- **Responsive Design**: Works on mobile and desktop devices.
+![App Preview](https://via.placeholder.com/800x400.png?text=FocusList+App)
 
-## Tech Stack
-- React 18
-- TypeScript
-- Vite
-- Tailwind CSS
-- Lucide React (Icons)
+## 🎯 Problem Alignment & Features
 
-## Getting Started
+FocusList fully satisfies all requirements specified in the FAIE Problem Statement:
 
-1. **Install dependencies**:
+1. **Task Creation**: Add new tasks rapidly with Enter key or button click.
+2. **Task Management**: Seamlessly edit text, toggle completion, and delete tasks.
+3. **Task Priority**: Assign `High`, `Medium`, or `Low` priority to every task. Visual badges identify priority at a glance.
+4. **Search and Filtering**: 
+   - Instant title search.
+   - Filter by Status (All / Active / Completed).
+   - Filter by Priority (All / High / Medium / Low).
+5. **Task Statistics**: Real-time dashboard tracking Total, Pending, and Completed tasks.
+6. **Data Persistence**: 100% Client-side persistence using `localStorage`. No data is lost on page refresh.
+
+## 🏗️ Architecture & Code Quality
+
+The application strictly follows modern React best practices to ensure high maintainability and clean architecture:
+
+- **Component-Driven**: Split into modular components (`TodoForm`, `TodoItem`, `TodoStats`) rather than a monolithic file.
+- **Custom Hooks**: Business logic and state management are abstracted into `useTodos.ts`.
+- **Strong Typing**: 100% TypeScript coverage with defined interfaces for `Todo` and `Priority`.
+- **Tailwind CSS**: Utility-first styling for a completely responsive, design-system-aligned UI without bloated stylesheets.
+- **Vite Setup**: Fast, modern bundler setup replacing legacy CRA.
+
+## 🚀 Setup & Installation
+
+Since this is a frontend-only application, getting started is extremely simple.
+
+### Prerequisites
+- Node.js (v16 or higher)
+- npm or yarn
+
+### Installation Steps
+
+1. Clone the repository:
+   \`\`\`bash
+   git clone https://github.com/Udbhav7002/focuslist-todo.git
+   cd focuslist-todo
+   \`\`\`
+
+2. Install dependencies:
    \`\`\`bash
    npm install
    \`\`\`
 
-2. **Run the development server**:
+3. Start the development server:
    \`\`\`bash
    npm run dev
    \`\`\`
+   The app will be available at `http://localhost:5173`.
 
-3. **Build for production**:
+4. Build for production:
    \`\`\`bash
    npm run build
    \`\`\`
 
-## Compliance with Guidelines
-- ✅ Frontend-only implementation (no backend services or external databases).
-- ✅ Live deployment ready (can be easily deployed on Vercel, Netlify, or GitHub Pages).
-- ✅ Original work.
+## ♿ Accessibility & UI/UX
+
+FocusList is designed to be usable by everyone.
+
+- **ARIA Compliant**: Every interactive element includes precise `aria-label`s and `aria-pressed` states.
+- **Keyboard Navigable**: Full support for Tab navigation and Enter/Escape key interactions for forms and editing.
+- **Responsive**: Fluid layouts that look beautiful on mobile, tablet, and desktop monitors.
+- **Visual Feedback**: Hover states, focus rings (using Tailwind's `focus:ring`), and distinct styling for completed vs active tasks.
+
+## 🛠️ Technology Stack
+- **React 18** (UI Library)
+- **TypeScript** (Static Typing)
+- **Vite** (Build Tool)
+- **Tailwind CSS** (Styling)
+- **Lucide React** (Icons)
+- **Local Storage API** (Database constraint workaround)
