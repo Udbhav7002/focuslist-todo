@@ -1,4 +1,4 @@
-# 🏆 FocusList — To-Do Application (Ultimate Edition)
+# 🏆 FocusList — To-Do Application 
 
 A clean, accessible, responsive, **enterprise-grade frontend** to-do app built with **React 18 + TypeScript + Vite + Tailwind CSS**. All data persists seamlessly in `localStorage` — no backend, no tracking, pure performance.
 
