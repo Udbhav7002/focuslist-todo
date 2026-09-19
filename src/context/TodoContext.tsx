@@ -15,6 +15,7 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return <TodoContext.Provider value={todosApi}>{children}</TodoContext.Provider>;
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTodoContext() {
   const context = useContext(TodoContext);
   if (!context) {

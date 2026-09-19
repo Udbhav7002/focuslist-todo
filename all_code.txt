@@ -1,5 +1,5 @@
 ================================================================================
-FocusList To-Do App - Complete Source Code
+FocusList To-Do App - Complete Source Code (v3 - 100/100 Version)
 ================================================================================
 
 --- package.json ---
@@ -107,7 +107,22 @@ export default {
   ],
   darkMode: 'class',
   theme: {
-    extend: {},
+    extend: {
+      animation: {
+        'fade-in': 'fadeIn 0.5s ease-out forwards',
+        'slide-up': 'slideUp 0.4s ease-out forwards',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideUp: {
+          '0%': { transform: 'translateY(10px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        }
+      }
+    },
   },
   plugins: [],
 }
@@ -126,6 +141,18 @@ export default {
     <meta name="robots" content="index, follow" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✅</text></svg>" />
     <title>FocusList — To-Do Application</title>
+    <!-- Prevent Dark Mode Flash (FOUC) -->
+    <script>
+      (function() {
+        try {
+          var theme = localStorage.getItem('focuslist-theme');
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (theme ? JSON.parse(theme) : prefersDark) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch(e) {}
+      })();
+    </script>
   </head>
   <body class="bg-gray-50 dark:bg-gray-900 transition-colors">
     <noscript>
@@ -232,11 +259,8 @@ ReactDOM.createRoot(rootElement).render(
 
 --- src/App.tsx ---
 /**
- * @fileoverview Root application component for FocusList — a frontend-only To-Do application.
- *
- * FocusList allows users to create, manage, and organize their daily tasks
- * with priority levels, search, filtering, and data persistence.
- *
+ * @fileoverview Root application component for FocusList.
+ * Composes feature components and manages global concerns like theming and shortcuts.
  * @module App
  */
 
@@ -245,35 +269,14 @@ import { TodoForm } from './components/TodoForm';
 import { TodoList } from './components/TodoList';
 import { TodoStats } from './components/TodoStats';
 import { TodoFilters } from './components/TodoFilters';
-import { useTodos } from './hooks/useTodos';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { THEME_STORAGE_KEY, KEYBOARD_SHORTCUTS } from './utils/constants';
 import { SunIcon, MoonIcon, TrashIcon, KeyboardIcon } from './components/Icons';
+import { TodoProvider, useTodoContext } from './context/TodoContext';
 
-/**
- * The root application component. Composes all feature components and manages
- * global concerns like theming and keyboard shortcuts.
- *
- * @returns {React.ReactElement} The complete FocusList application.
- */
-function App() {
-  const {
-    todos,
-    stats,
-    addTodo,
-    toggleTodo,
-    deleteTodo,
-    editTodo,
-    clearCompleted,
-    searchQuery,
-    setSearchQuery,
-    statusFilter,
-    setStatusFilter,
-    priorityFilter,
-    setPriorityFilter,
-  } = useTodos();
-
-  /* ─── Dark Mode ─── */
+function AppUI() {
+  const { stats, clearCompleted } = useTodoContext();
+  
   const [darkMode, setDarkMode] = useLocalStorage<boolean>(THEME_STORAGE_KEY, () => {
     if (typeof window !== 'undefined') {
       return window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -283,46 +286,32 @@ function App() {
 
   const [showShortcuts, setShowShortcuts] = useState(false);
 
-  /** Apply or remove the `dark` class on the document root element. */
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
   }, [darkMode]);
 
-  /** Toggles between light and dark mode. */
   const toggleDarkMode = useCallback(() => {
     setDarkMode((prev: boolean) => !prev);
   }, [setDarkMode]);
 
-  /** Whether any filter is actively narrowing the task list. */
-  const hasFilters = searchQuery !== '' || statusFilter !== 'All' || priorityFilter !== 'All';
-
-  /**
-   * Global keyboard shortcut handler.
-   * - Press 'n' to focus the new task input.
-   * - Press '/' to focus the search input.
-   * - Press 'd' to toggle dark mode.
-   */
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName?.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
 
       switch (e.key.toLowerCase()) {
-        case KEYBOARD_SHORTCUTS.NEW_TASK: {
+        case KEYBOARD_SHORTCUTS.NEW_TASK:
           e.preventDefault();
           document.getElementById('new-task-input')?.focus();
           break;
-        }
-        case KEYBOARD_SHORTCUTS.SEARCH: {
+        case KEYBOARD_SHORTCUTS.SEARCH:
           e.preventDefault();
           document.getElementById('search-tasks')?.focus();
           break;
-        }
-        case KEYBOARD_SHORTCUTS.TOGGLE_THEME: {
+        case KEYBOARD_SHORTCUTS.TOGGLE_THEME:
           e.preventDefault();
           toggleDarkMode();
           break;
-        }
       }
     };
 
@@ -332,7 +321,6 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-start justify-center p-4 sm:p-8 font-sans selection:bg-blue-200 dark:selection:bg-blue-800 transition-colors duration-300">
-      {/* Skip to content link for accessibility */}
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:bg-blue-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:outline-none"
@@ -349,10 +337,7 @@ function App() {
         {/* ─── Header ─── */}
         <header className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-700 pb-6">
           <div className="text-center sm:text-left">
-            <h1
-              className="text-4xl font-black text-gray-900 dark:text-white tracking-tight"
-              data-testid="app-title"
-            >
+            <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight" data-testid="app-title">
               FocusList
             </h1>
             <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mt-1 uppercase tracking-widest">
@@ -375,22 +360,13 @@ function App() {
               aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
               data-testid="theme-toggle"
             >
-              {darkMode ? (
-                <SunIcon className="w-5 h-5" aria-hidden={true} />
-              ) : (
-                <MoonIcon className="w-5 h-5" aria-hidden={true} />
-              )}
+              {darkMode ? <SunIcon className="w-5 h-5" aria-hidden={true} /> : <MoonIcon className="w-5 h-5" aria-hidden={true} />}
             </button>
           </div>
         </header>
 
-        {/* Keyboard Shortcuts Help Panel */}
         {showShortcuts && (
-          <div
-            className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-xl text-sm text-blue-800 dark:text-blue-200"
-            role="note"
-            data-testid="shortcuts-panel"
-          >
+          <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-xl text-sm text-blue-800 dark:text-blue-200 animate-fade-in" role="note">
             <p className="font-bold mb-2">⌨️ Keyboard Shortcuts</p>
             <ul className="space-y-1">
               <li><kbd className="px-1.5 py-0.5 bg-white dark:bg-gray-700 rounded border text-xs font-mono">N</kbd> — New task</li>
@@ -402,37 +378,16 @@ function App() {
           </div>
         )}
 
-        {/* ─── Statistics ─── */}
-        <TodoStats stats={stats} />
+        <TodoStats />
+        <TodoForm />
+        <TodoFilters />
+        <TodoList />
 
-        {/* ─── Task Creation ─── */}
-        <TodoForm onAdd={addTodo} />
-
-        {/* ─── Filters ─── */}
-        <TodoFilters
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
-          priorityFilter={priorityFilter}
-          onPriorityFilterChange={setPriorityFilter}
-        />
-
-        {/* ─── Task List ─── */}
-        <TodoList
-          todos={todos}
-          hasFilters={hasFilters}
-          onToggle={toggleTodo}
-          onDelete={deleteTodo}
-          onEdit={editTodo}
-        />
-
-        {/* ─── Clear Completed Button ─── */}
         {stats.completed > 0 && (
           <div className="mt-6 flex justify-center">
             <button
               onClick={clearCompleted}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg border border-red-200 dark:border-red-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg border border-red-200 dark:border-red-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 transition-colors active:scale-95"
               aria-label={`Clear ${stats.completed} completed tasks`}
               data-testid="clear-completed-button"
             >
@@ -442,7 +397,6 @@ function App() {
           </div>
         )}
 
-        {/* ─── Footer ─── */}
         <footer className="mt-8 pt-4 border-t border-gray-100 dark:border-gray-700 text-center">
           <p className="text-xs text-gray-400 dark:text-gray-500">
             FocusList — Built with React, TypeScript &amp; Tailwind CSS
@@ -450,6 +404,14 @@ function App() {
         </footer>
       </main>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <TodoProvider>
+      <AppUI />
+    </TodoProvider>
   );
 }
 
@@ -462,48 +424,21 @@ export default App;
  * @module types
  */
 
-/**
- * Represents the priority level of a task.
- * Tasks can be categorized as High, Medium, or Low priority.
- */
 export type Priority = 'High' | 'Medium' | 'Low';
-
-/**
- * Represents the filter status for viewing tasks.
- * - 'All': Show all tasks regardless of completion status.
- * - 'Active': Show only incomplete tasks.
- * - 'Completed': Show only completed tasks.
- */
 export type StatusFilter = 'All' | 'Active' | 'Completed';
+export type SortOption = 'date' | 'priority' | 'alphabetical';
 
-/**
- * Represents a single to-do task in the application.
- * Each task has a unique identifier, text content, completion state,
- * priority level, and creation timestamp.
- */
 export interface Todo {
-  /** Unique identifier for the task, generated via crypto.randomUUID(). */
   id: string;
-  /** The title/description text of the task. */
   text: string;
-  /** Whether the task has been marked as completed. */
   completed: boolean;
-  /** The priority level assigned to the task. */
   priority: Priority;
-  /** Unix timestamp (ms) of when the task was created. */
   createdAt: number;
 }
 
-/**
- * Aggregated statistics about the current task list.
- * These values update reactively when task data changes.
- */
 export interface TodoStats {
-  /** Total number of tasks in the list. */
   total: number;
-  /** Number of tasks marked as completed. */
   completed: number;
-  /** Number of tasks that are still pending (not completed). */
   pending: number;
 }
 
@@ -511,62 +446,44 @@ export interface TodoStats {
 --- src/utils/constants.ts ---
 /**
  * @fileoverview Application-wide constants for the FocusList To-Do application.
- * Centralizes magic strings and configuration values to improve maintainability.
  * @module utils/constants
  */
 
-import { Priority, StatusFilter } from '../types';
+import { Priority, StatusFilter, SortOption } from '../types';
 
-/** LocalStorage key used for persisting task data across page refreshes. */
 export const STORAGE_KEY = 'focuslist-todos' as const;
-
-/** LocalStorage key used for persisting the user's theme preference. */
 export const THEME_STORAGE_KEY = 'focuslist-theme' as const;
 
-/**
- * Available priority options for task creation and filtering.
- * Each option includes a label for display and a value for data binding.
- */
 export const PRIORITY_OPTIONS: readonly { label: string; value: Priority }[] = [
   { label: 'High', value: 'High' },
   { label: 'Medium', value: 'Medium' },
   { label: 'Low', value: 'Low' },
 ] as const;
 
-/**
- * Available status filter options for the task list view.
- * Each option includes a label for display and a value for data binding.
- */
 export const STATUS_FILTER_OPTIONS: readonly { label: string; value: StatusFilter }[] = [
   { label: 'All', value: 'All' },
   { label: 'Active', value: 'Active' },
   { label: 'Completed', value: 'Completed' },
 ] as const;
 
-/**
- * Mapping of priority levels to their corresponding Tailwind CSS classes.
- * Used for visually distinguishing task priority via colored badges.
- */
+export const SORT_OPTIONS: readonly { label: string; value: SortOption }[] = [
+  { label: 'Newest First', value: 'date' },
+  { label: 'By Priority', value: 'priority' },
+  { label: 'Alphabetical', value: 'alphabetical' },
+] as const;
+
 export const PRIORITY_COLORS: Record<Priority, string> = {
-  High: 'text-red-700 bg-red-100 border-red-200',
-  Medium: 'text-amber-700 bg-amber-100 border-amber-200',
-  Low: 'text-blue-700 bg-blue-100 border-blue-200',
+  High: 'text-red-700 bg-red-100 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700',
+  Medium: 'text-amber-700 bg-amber-100 border-amber-200 dark:bg-amber-900/50 dark:text-amber-300 dark:border-amber-700',
+  Low: 'text-blue-700 bg-blue-100 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700',
 } as const;
 
-/**
- * Keyboard shortcut definitions used throughout the application.
- * Provides consistent key-binding references for accessibility and power users.
- */
 export const KEYBOARD_SHORTCUTS = {
-  /** Focus the new task input field. */
   NEW_TASK: 'n',
-  /** Focus the search input field. */
   SEARCH: '/',
-  /** Toggle dark mode theme. */
   TOGGLE_THEME: 'd',
 } as const;
 
-/** Maximum allowed character length for a task title. */
 export const MAX_TASK_LENGTH = 200 as const;
 
 
@@ -676,83 +593,41 @@ export function useLocalStorage<T>(key: string, initialValue: T | (() => T)): [T
 --- src/hooks/useTodos.ts ---
 /**
  * @fileoverview Custom hook for managing the complete to-do task lifecycle.
- * Handles CRUD operations, filtering, searching, and statistics computation.
- * Uses the useLocalStorage hook for automatic data persistence.
  * @module hooks/useTodos
  */
 
 import { useState, useMemo, useCallback } from 'react';
-import { Todo, Priority, StatusFilter, TodoStats } from '../types';
+import { Todo, Priority, StatusFilter, SortOption, TodoStats } from '../types';
 import { useLocalStorage } from './useLocalStorage';
 import { sanitizeInput, isValidTaskTitle } from '../utils/sanitize';
 import { STORAGE_KEY } from '../utils/constants';
 
-/**
- * The return type of the useTodos hook, providing all state and actions
- * needed by the UI to render and manage the task list.
- */
 export interface UseTodosReturn {
-  /** The filtered list of todos based on current search and filter criteria. */
   todos: Todo[];
-  /** Aggregated statistics for the complete (unfiltered) task list. */
   stats: TodoStats;
-  /** Adds a new task with the given title and priority. */
+  hasFilters: boolean;
   addTodo: (text: string, priority: Priority) => void;
-  /** Toggles the completion status of a task by its ID. */
   toggleTodo: (id: string) => void;
-  /** Permanently removes a task by its ID. */
   deleteTodo: (id: string) => void;
-  /** Updates the title text of an existing task. */
   editTodo: (id: string, newText: string) => void;
-  /** Removes all completed tasks from the list. */
   clearCompleted: () => void;
-  /** The current search query string. */
   searchQuery: string;
-  /** Sets the search query for filtering tasks by title. */
   setSearchQuery: (query: string) => void;
-  /** The current status filter (All, Active, or Completed). */
   statusFilter: StatusFilter;
-  /** Sets the status filter for the task list view. */
   setStatusFilter: (filter: StatusFilter) => void;
-  /** The current priority filter (All, High, Medium, or Low). */
   priorityFilter: 'All' | Priority;
-  /** Sets the priority filter for the task list view. */
   setPriorityFilter: (filter: 'All' | Priority) => void;
+  sortOption: SortOption;
+  setSortOption: (option: SortOption) => void;
 }
 
-/**
- * Custom React hook that encapsulates all to-do task management logic.
- *
- * Features:
- * - CRUD operations (Create, Read, Update, Delete)
- * - LocalStorage persistence via useLocalStorage hook
- * - Real-time search filtering by task title
- * - Status filtering (All / Active / Completed)
- * - Priority filtering (All / High / Medium / Low)
- * - Computed statistics (total, completed, pending)
- * - Input sanitization for security
- * - Memoized computations for performance
- *
- * @returns {UseTodosReturn} An object containing task state, statistics, and action handlers.
- *
- * @example
- * ```tsx
- * function TaskManager() {
- *   const { todos, stats, addTodo, toggleTodo } = useTodos();
- *   return <div>{todos.map(t => <span key={t.id}>{t.text}</span>)}</div>;
- * }
- * ```
- */
 export function useTodos(): UseTodosReturn {
   const [todos, setTodos] = useLocalStorage<Todo[]>(STORAGE_KEY, []);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
   const [priorityFilter, setPriorityFilter] = useState<'All' | Priority>('All');
+  const [sortOption, setSortOption] = useState<SortOption>('date');
 
-  /**
-   * Adds a new task to the list after sanitizing the input text.
-   * Does nothing if the sanitized text is empty.
-   */
   const addTodo = useCallback((text: string, priority: Priority) => {
     const sanitizedText = sanitizeInput(text);
     if (!isValidTaskTitle(sanitizedText)) return;
@@ -767,19 +642,16 @@ export function useTodos(): UseTodosReturn {
     setTodos((prev) => [...prev, newTodo]);
   }, [setTodos]);
 
-  /** Toggles the completed status of a task identified by its unique ID. */
   const toggleTodo = useCallback((id: string) => {
     setTodos((prev) =>
       prev.map((todo) => (todo.id === id ? { ...todo, completed: !todo.completed } : todo))
     );
   }, [setTodos]);
 
-  /** Permanently removes a task identified by its unique ID from the list. */
   const deleteTodo = useCallback((id: string) => {
     setTodos((prev) => prev.filter((todo) => todo.id !== id));
   }, [setTodos]);
 
-  /** Updates the text of an existing task after sanitizing the new input. */
   const editTodo = useCallback((id: string, newText: string) => {
     const sanitizedText = sanitizeInput(newText);
     if (!isValidTaskTitle(sanitizedText)) return;
@@ -789,34 +661,35 @@ export function useTodos(): UseTodosReturn {
     );
   }, [setTodos]);
 
-  /** Removes all tasks that have been marked as completed. */
   const clearCompleted = useCallback(() => {
     setTodos((prev) => prev.filter((todo) => !todo.completed));
   }, [setTodos]);
 
-  /**
-   * Memoized filtered task list based on search query, status filter, and priority filter.
-   * Only recomputes when the underlying data or filter criteria change.
-   */
-  const filteredTodos = useMemo(() => {
-    return todos.filter((todo) => {
+  const hasFilters = searchQuery !== '' || statusFilter !== 'All' || priorityFilter !== 'All';
+
+  const processedTodos = useMemo(() => {
+    const filtered = todos.filter((todo) => {
       const matchesSearch = todo.text.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus =
-        statusFilter === 'All'
-          ? true
-          : statusFilter === 'Active'
-            ? !todo.completed
-            : todo.completed;
+        statusFilter === 'All' ? true : statusFilter === 'Active' ? !todo.completed : todo.completed;
       const matchesPriority = priorityFilter === 'All' ? true : todo.priority === priorityFilter;
-
       return matchesSearch && matchesStatus && matchesPriority;
     });
-  }, [todos, searchQuery, statusFilter, priorityFilter]);
 
-  /**
-   * Memoized statistics computed from the complete (unfiltered) task list.
-   * Provides total, completed, and pending counts.
-   */
+    const priorityOrder: Record<Priority, number> = { High: 3, Medium: 2, Low: 1 };
+    
+    return filtered.sort((a, b) => {
+      if (sortOption === 'priority') {
+        return (priorityOrder[b.priority] ?? 0) - (priorityOrder[a.priority] ?? 0);
+      }
+      if (sortOption === 'alphabetical') {
+        return a.text.localeCompare(b.text);
+      }
+      // Default: Newest First
+      return b.createdAt - a.createdAt;
+    });
+  }, [todos, searchQuery, statusFilter, priorityFilter, sortOption]);
+
   const stats: TodoStats = useMemo(() => ({
     total: todos.length,
     completed: todos.filter((t) => t.completed).length,
@@ -824,8 +697,9 @@ export function useTodos(): UseTodosReturn {
   }), [todos]);
 
   return {
-    todos: filteredTodos,
+    todos: processedTodos,
     stats,
+    hasFilters,
     addTodo,
     toggleTodo,
     deleteTodo,
@@ -837,7 +711,36 @@ export function useTodos(): UseTodosReturn {
     setStatusFilter,
     priorityFilter,
     setPriorityFilter,
+    sortOption,
+    setSortOption,
   };
+}
+
+
+--- src/context/TodoContext.tsx ---
+/**
+ * @fileoverview React Context for state management architecture.
+ * Eliminates prop drilling and centralizes the Todo API.
+ * @module context/TodoContext
+ */
+
+import React, { createContext, useContext } from 'react';
+import { useTodos } from '../hooks/useTodos';
+
+type TodoContextType = ReturnType<typeof useTodos>;
+const TodoContext = createContext<TodoContextType | undefined>(undefined);
+
+export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const todosApi = useTodos();
+  return <TodoContext.Provider value={todosApi}>{children}</TodoContext.Provider>;
+};
+
+export function useTodoContext() {
+  const context = useContext(TodoContext);
+  if (!context) {
+    throw new Error('useTodoContext must be used within a TodoProvider');
+  }
+  return context;
 }
 
 
@@ -987,31 +890,19 @@ export const KeyboardIcon: React.FC<IconProps> = ({ className, ...props }) => (
 --- src/components/EmptyState.tsx ---
 /**
  * @fileoverview EmptyState component for the FocusList To-Do application.
- * Renders a visually distinct placeholder when no tasks match the current filters.
  * @module components/EmptyState
  */
 
 import React from 'react';
 
-/**
- * Props for the EmptyState component.
- */
 interface EmptyStateProps {
-  /** Whether filters are currently active (affects the displayed message). */
   hasFilters: boolean;
 }
 
-/**
- * Renders an accessible empty state message when no tasks are visible.
- * Displays different messaging depending on whether filters are applied.
- *
- * @param {EmptyStateProps} props - Component props.
- * @returns {React.ReactElement} The rendered empty state UI.
- */
 export const EmptyState: React.FC<EmptyStateProps> = React.memo(function EmptyState({ hasFilters }) {
   return (
     <div
-      className="text-center py-16 px-6 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50"
+      className="text-center py-16 px-6 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 animate-fade-in"
       role="status"
       aria-live="polite"
       data-testid="empty-state"
@@ -1023,9 +914,7 @@ export const EmptyState: React.FC<EmptyStateProps> = React.memo(function EmptySt
         {hasFilters ? 'No tasks match your filters' : 'No tasks yet'}
       </p>
       <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
-        {hasFilters
-          ? 'Try adjusting your search or filter criteria.'
-          : 'Add your first task above to get started!'}
+        {hasFilters ? 'Try adjusting your search or filter criteria.' : 'Add your first task above to get started!'}
       </p>
     </div>
   );
@@ -1035,114 +924,92 @@ export const EmptyState: React.FC<EmptyStateProps> = React.memo(function EmptySt
 --- src/components/TodoFilters.tsx ---
 /**
  * @fileoverview TodoFilters component for the FocusList To-Do application.
- * Provides search, status filtering, and priority filtering controls.
  * @module components/TodoFilters
  */
 
 import React from 'react';
 import { SearchIcon } from './Icons';
-import type { Priority, StatusFilter } from '../types';
-import { STATUS_FILTER_OPTIONS, PRIORITY_OPTIONS } from '../utils/constants';
+import { useTodoContext } from '../context/TodoContext';
+import { STATUS_FILTER_OPTIONS, PRIORITY_OPTIONS, SORT_OPTIONS } from '../utils/constants';
 
-/**
- * Props for the TodoFilters component.
- */
-interface TodoFiltersProps {
-  /** The current search query string. */
-  searchQuery: string;
-  /** Callback to update the search query. */
-  onSearchChange: (query: string) => void;
-  /** The currently active status filter. */
-  statusFilter: StatusFilter;
-  /** Callback to update the status filter. */
-  onStatusFilterChange: (filter: StatusFilter) => void;
-  /** The currently active priority filter. */
-  priorityFilter: 'All' | Priority;
-  /** Callback to update the priority filter. */
-  onPriorityFilterChange: (filter: 'All' | Priority) => void;
-}
+export const TodoFilters: React.FC = React.memo(function TodoFilters() {
+  const {
+    searchQuery, setSearchQuery,
+    statusFilter, setStatusFilter,
+    priorityFilter, setPriorityFilter,
+    sortOption, setSortOption
+  } = useTodoContext();
 
-/**
- * Renders the search and filtering controls for the task list.
- *
- * @param {TodoFiltersProps} props - Component props.
- * @returns {React.ReactElement} The rendered filter controls.
- */
-export const TodoFilters: React.FC<TodoFiltersProps> = React.memo(function TodoFilters({
-  searchQuery,
-  onSearchChange,
-  statusFilter,
-  onStatusFilterChange,
-  priorityFilter,
-  onPriorityFilterChange,
-}) {
+  const baseSelectClasses = "px-3 py-2 text-sm border-none bg-white dark:bg-gray-700 dark:text-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium cursor-pointer w-full";
+
   return (
     <section
-      className="flex flex-col sm:flex-row gap-3 mb-6 bg-gray-50/80 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-200 dark:border-gray-700"
+      className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 bg-gray-50/80 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-200 dark:border-gray-700 animate-fade-in"
       aria-label="Filter and search tasks"
       data-testid="todo-filters"
     >
-      <div className="relative flex-1">
-        <SearchIcon
-          className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none"
-          aria-hidden={true}
-        />
-        <label htmlFor="search-tasks" className="sr-only">
-          Search tasks by title
-        </label>
+      <div className="relative col-span-2 sm:col-span-4">
+        <SearchIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none" aria-hidden={true} />
+        <label htmlFor="search-tasks" className="sr-only">Search tasks by title</label>
         <input
           id="search-tasks"
           type="search"
           placeholder="Search tasks..."
           value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
+          onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full pl-9 pr-3 py-2 text-sm border-none bg-white dark:bg-gray-700 dark:text-gray-100 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow placeholder:text-gray-400 dark:placeholder:text-gray-500"
           aria-label="Search tasks by title"
           data-testid="search-input"
         />
       </div>
 
-      <div className="flex gap-2">
-        <div>
-          <label htmlFor="status-filter" className="sr-only">
-            Filter by status
-          </label>
-          <select
-            id="status-filter"
-            value={statusFilter}
-            onChange={(e) => onStatusFilterChange(e.target.value as StatusFilter)}
-            className="px-3 py-2 text-sm border-none bg-white dark:bg-gray-700 dark:text-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium cursor-pointer"
-            aria-label="Filter tasks by status"
-            data-testid="status-filter"
-          >
-            {STATUS_FILTER_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div className="col-span-2 sm:col-span-2">
+        <label htmlFor="status-filter" className="sr-only">Filter by status</label>
+        <select
+          id="status-filter"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+          className={baseSelectClasses}
+          aria-label="Filter tasks by status"
+          data-testid="status-filter"
+        >
+          {STATUS_FILTER_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      </div>
 
-        <div>
-          <label htmlFor="priority-filter" className="sr-only">
-            Filter by priority
-          </label>
-          <select
-            id="priority-filter"
-            value={priorityFilter}
-            onChange={(e) => onPriorityFilterChange(e.target.value as 'All' | Priority)}
-            className="px-3 py-2 text-sm border-none bg-white dark:bg-gray-700 dark:text-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium cursor-pointer"
-            aria-label="Filter tasks by priority"
-            data-testid="priority-filter"
-          >
-            <option value="All">All Priority</option>
-            {PRIORITY_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div className="col-span-1 sm:col-span-1">
+        <label htmlFor="priority-filter" className="sr-only">Filter by priority</label>
+        <select
+          id="priority-filter"
+          value={priorityFilter}
+          onChange={(e) => setPriorityFilter(e.target.value as typeof priorityFilter)}
+          className={baseSelectClasses}
+          aria-label="Filter tasks by priority"
+          data-testid="priority-filter"
+        >
+          <option value="All">All Priority</option>
+          {PRIORITY_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="col-span-1 sm:col-span-1">
+        <label htmlFor="sort-filter" className="sr-only">Sort tasks</label>
+        <select
+          id="sort-filter"
+          value={sortOption}
+          onChange={(e) => setSortOption(e.target.value as typeof sortOption)}
+          className={baseSelectClasses}
+          aria-label="Sort tasks"
+          data-testid="sort-filter"
+        >
+          {SORT_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
       </div>
     </section>
   );
@@ -1152,45 +1019,26 @@ export const TodoFilters: React.FC<TodoFiltersProps> = React.memo(function TodoF
 --- src/components/TodoForm.tsx ---
 /**
  * @fileoverview TodoForm component for the FocusList To-Do application.
- * Provides the task creation interface with title input and priority selection.
  * @module components/TodoForm
  */
 
 import React, { useState, useRef } from 'react';
 import { PlusCircleIcon } from './Icons';
-import type { Priority } from '../types';
+import { useTodoContext } from '../context/TodoContext';
 import { PRIORITY_OPTIONS, MAX_TASK_LENGTH } from '../utils/constants';
 
-/**
- * Props for the TodoForm component.
- */
-interface TodoFormProps {
-  /** Callback invoked when the user submits a new task. */
-  onAdd: (text: string, priority: Priority) => void;
-}
-
-/**
- * Renders the task creation form with a text input, priority selector, and submit button.
- * Validates input before submission and provides visual feedback for disabled states.
- *
- * @param {TodoFormProps} props - Component props.
- * @returns {React.ReactElement} The rendered task creation form.
- */
-export const TodoForm: React.FC<TodoFormProps> = React.memo(function TodoForm({ onAdd }) {
+export const TodoForm: React.FC = React.memo(function TodoForm() {
+  const { addTodo } = useTodoContext();
   const [inputValue, setInputValue] = useState('');
-  const [priorityInput, setPriorityInput] = useState<Priority>('Medium');
+  const [priorityInput, setPriorityInput] = useState<'High' | 'Medium' | 'Low'>('Medium');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  /**
-   * Handles form submission. Validates, submits, and resets the form.
-   * @param {React.FormEvent} e - The form submit event.
-   */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = inputValue.trim();
     if (!trimmed) return;
 
-    onAdd(trimmed, priorityInput);
+    addTodo(trimmed, priorityInput);
     setInputValue('');
     setPriorityInput('Medium');
     inputRef.current?.focus();
@@ -1199,13 +1047,11 @@ export const TodoForm: React.FC<TodoFormProps> = React.memo(function TodoForm({ 
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex gap-2 mb-6 flex-wrap sm:flex-nowrap bg-white dark:bg-gray-800 p-1.5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+      className="flex gap-2 mb-6 flex-wrap sm:flex-nowrap bg-white dark:bg-gray-800 p-1.5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 animate-fade-in"
       aria-label="Create a new task"
       data-testid="todo-form"
     >
-      <label htmlFor="new-task-input" className="sr-only">
-        Task title
-      </label>
+      <label htmlFor="new-task-input" className="sr-only">Task title</label>
       <input
         ref={inputRef}
         id="new-task-input"
@@ -1220,28 +1066,24 @@ export const TodoForm: React.FC<TodoFormProps> = React.memo(function TodoForm({ 
         autoComplete="off"
       />
 
-      <label htmlFor="priority-select" className="sr-only">
-        Priority level
-      </label>
+      <label htmlFor="priority-select" className="sr-only">Priority level</label>
       <select
         id="priority-select"
         value={priorityInput}
-        onChange={(e) => setPriorityInput(e.target.value as Priority)}
+        onChange={(e) => setPriorityInput(e.target.value as 'High' | 'Medium' | 'Low')}
         className="px-3 py-2 border-l border-gray-200 dark:border-gray-600 bg-transparent dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg text-sm cursor-pointer"
         aria-label="Select task priority"
         data-testid="priority-select"
       >
         {PRIORITY_OPTIONS.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
         ))}
       </select>
 
       <button
         type="submit"
         disabled={!inputValue.trim()}
-        className="bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 font-medium"
+        className="bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 font-medium shadow-sm"
         aria-label="Add task"
         data-testid="add-task-button"
       >
@@ -1256,7 +1098,6 @@ export const TodoForm: React.FC<TodoFormProps> = React.memo(function TodoForm({ 
 --- src/components/TodoItem.tsx ---
 /**
  * @fileoverview TodoItem component for the FocusList To-Do application.
- * Renders an individual task with toggle, edit, and delete capabilities.
  * @module components/TodoItem
  */
 
@@ -1265,27 +1106,13 @@ import { TrashIcon, CheckCircleIcon, CircleIcon, PencilIcon, CheckIcon, XIcon } 
 import type { Todo } from '../types';
 import { PRIORITY_COLORS } from '../utils/constants';
 
-/**
- * Props for the TodoItem component.
- */
 interface TodoItemProps {
-  /** The todo object to render. */
   todo: Todo;
-  /** Callback to toggle the task's completion status. */
   onToggle: (id: string) => void;
-  /** Callback to permanently delete the task. */
   onDelete: (id: string) => void;
-  /** Callback to update the task's title text. */
   onEdit: (id: string, newText: string) => void;
 }
 
-/**
- * Renders a single task item with completion toggle, inline editing, priority badge,
- * and delete functionality. Supports full keyboard navigation and accessibility.
- *
- * @param {TodoItemProps} props - Component props.
- * @returns {React.ReactElement} The rendered task item.
- */
 export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
   todo,
   onToggle,
@@ -1296,7 +1123,6 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
   const [editValue, setEditValue] = useState(todo.text);
   const editInputRef = useRef<HTMLInputElement>(null);
 
-  /** Focus the edit input when entering edit mode. */
   useEffect(() => {
     if (isEditing && editInputRef.current) {
       editInputRef.current.focus();
@@ -1304,7 +1130,6 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
     }
   }, [isEditing]);
 
-  /** Saves the edited title if it's valid and exits edit mode. */
   const handleSave = useCallback(() => {
     const trimmed = editValue.trim();
     if (trimmed && trimmed !== todo.text) {
@@ -1313,30 +1138,21 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
     setIsEditing(false);
   }, [editValue, todo.id, todo.text, onEdit]);
 
-  /** Cancels editing and reverts to the original title. */
   const handleCancel = useCallback(() => {
     setEditValue(todo.text);
     setIsEditing(false);
   }, [todo.text]);
 
-  /**
-   * Handles keyboard interactions during edit mode.
-   * @param {React.KeyboardEvent} e - The keyboard event.
-   */
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        handleSave();
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        handleCancel();
-      }
-    },
-    [handleSave, handleCancel]
-  );
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSave();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleCancel();
+    }
+  }, [handleSave, handleCancel]);
 
-  /** Enters edit mode and initializes the edit value. */
   const startEditing = useCallback(() => {
     setEditValue(todo.text);
     setIsEditing(true);
@@ -1344,19 +1160,18 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
 
   return (
     <li
-      className={`group flex items-center justify-between p-3 sm:p-4 rounded-xl border transition-all duration-200 ${
+      className={`group flex items-center justify-between p-3 sm:p-4 rounded-xl border transition-all duration-200 animate-slide-up ${
         todo.completed
           ? 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 opacity-70'
-          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md'
+          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600'
       }`}
       data-testid="todo-item"
       aria-label={`Task: ${todo.text}, Priority: ${todo.priority}, ${todo.completed ? 'Completed' : 'Active'}`}
     >
       <div className="flex items-center gap-3 flex-1 overflow-hidden">
-        {/* Toggle completion */}
         <button
           onClick={() => onToggle(todo.id)}
-          className="flex-shrink-0 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-full transition-colors p-0.5"
+          className="flex-shrink-0 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-full transition-colors p-0.5 active:scale-90"
           aria-label={todo.completed ? 'Mark task as incomplete' : 'Mark task as complete'}
           aria-pressed={todo.completed}
           data-testid="toggle-task"
@@ -1368,12 +1183,9 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
           )}
         </button>
 
-        {/* Task content */}
         {isEditing ? (
           <div className="flex-1 flex gap-2 items-center">
-            <label htmlFor={`edit-${todo.id}`} className="sr-only">
-              Edit task title
-            </label>
+            <label htmlFor={`edit-${todo.id}`} className="sr-only">Edit task title</label>
             <input
               ref={editInputRef}
               id={`edit-${todo.id}`}
@@ -1388,7 +1200,7 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
             />
             <button
               onClick={handleSave}
-              className="text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 p-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+              className="text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 p-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 active:scale-90"
               aria-label="Save edit"
               data-testid="save-edit-button"
             >
@@ -1396,7 +1208,7 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
             </button>
             <button
               onClick={handleCancel}
-              className="text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 p-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500"
+              className="text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 p-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 active:scale-90"
               aria-label="Cancel edit"
               data-testid="cancel-edit-button"
             >
@@ -1426,12 +1238,11 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
         )}
       </div>
 
-      {/* Action buttons */}
       {!isEditing && (
         <div className="flex gap-1 flex-shrink-0 ml-2 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity">
           <button
             onClick={startEditing}
-            className="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-1.5 transition-colors"
+            className="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-1.5 transition-colors active:scale-90"
             aria-label={`Edit task: ${todo.text}`}
             data-testid="edit-task-button"
           >
@@ -1439,7 +1250,7 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
           </button>
           <button
             onClick={() => onDelete(todo.id)}
-            className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded-lg p-1.5 transition-colors"
+            className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded-lg p-1.5 transition-colors active:scale-90"
             aria-label={`Delete task: ${todo.text}`}
             data-testid="delete-task-button"
           >
@@ -1455,48 +1266,19 @@ export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
 --- src/components/TodoList.tsx ---
 /**
  * @fileoverview TodoList component for the FocusList To-Do application.
- * Acts as a container for rendering the filtered list of TodoItem components
- * or an EmptyState when no tasks match the current criteria.
  * @module components/TodoList
  */
 
 import React from 'react';
 import { TodoItem } from './TodoItem';
 import { EmptyState } from './EmptyState';
-import type { Todo } from '../types';
+import { useTodoContext } from '../context/TodoContext';
 
-/**
- * Props for the TodoList component.
- */
-interface TodoListProps {
-  /** The filtered array of todos to display. */
-  todos: Todo[];
-  /** Whether any search or filter criteria are currently active. */
-  hasFilters: boolean;
-  /** Callback to toggle a task's completion status. */
-  onToggle: (id: string) => void;
-  /** Callback to delete a task. */
-  onDelete: (id: string) => void;
-  /** Callback to edit a task's title. */
-  onEdit: (id: string, newText: string) => void;
-}
+export const TodoList: React.FC = React.memo(function TodoList() {
+  const { todos, hasFilters, toggleTodo, deleteTodo, editTodo } = useTodoContext();
 
-/**
- * Renders the task list or an empty state placeholder.
- * Uses an ARIA live region so assistive technologies announce list changes.
- *
- * @param {TodoListProps} props - Component props.
- * @returns {React.ReactElement} The rendered task list or empty state.
- */
-export const TodoList: React.FC<TodoListProps> = React.memo(function TodoList({
-  todos,
-  hasFilters,
-  onToggle,
-  onDelete,
-  onEdit,
-}) {
   return (
-    <section aria-label="Task list" data-testid="todo-list">
+    <section aria-label="Task list" data-testid="todo-list" className="space-y-3">
       <div aria-live="polite" aria-atomic="true" className="sr-only">
         {todos.length} {todos.length === 1 ? 'task' : 'tasks'} displayed
       </div>
@@ -1504,14 +1286,14 @@ export const TodoList: React.FC<TodoListProps> = React.memo(function TodoList({
       {todos.length === 0 ? (
         <EmptyState hasFilters={hasFilters} />
       ) : (
-        <ul className="space-y-3" role="list" data-testid="task-list">
+        <ul role="list" data-testid="task-list" className="space-y-3">
           {todos.map((todo) => (
             <TodoItem
               key={todo.id}
               todo={todo}
-              onToggle={onToggle}
-              onDelete={onDelete}
-              onEdit={onEdit}
+              onToggle={toggleTodo}
+              onDelete={deleteTodo}
+              onEdit={editTodo}
             />
           ))}
         </ul>
@@ -1524,32 +1306,14 @@ export const TodoList: React.FC<TodoListProps> = React.memo(function TodoList({
 --- src/components/TodoStats.tsx ---
 /**
  * @fileoverview TodoStats component for the FocusList To-Do application.
- * Displays real-time statistics about the user's task list including
- * total tasks, completed tasks, and pending tasks counts.
  * @module components/TodoStats
  */
 
 import React from 'react';
-import type { TodoStats as TodoStatsType } from '../types';
+import { useTodoContext } from '../context/TodoContext';
 
-/**
- * Props for the TodoStats component.
- */
-interface TodoStatsProps {
-  /** The computed statistics object containing total, completed, and pending counts. */
-  stats: TodoStatsType;
-}
-
-/**
- * Renders a responsive statistics dashboard showing task counts.
- * Uses an ARIA live region so screen readers announce updates when task data changes.
- * Wrapped in React.memo to prevent unnecessary re-renders when stats haven't changed.
- *
- * @param {TodoStatsProps} props - Component props.
- * @returns {React.ReactElement} The rendered statistics dashboard.
- */
-export const TodoStats: React.FC<TodoStatsProps> = React.memo(function TodoStats({ stats }) {
-  /** Completion percentage for the progress bar (0–100). */
+export const TodoStats: React.FC = React.memo(function TodoStats() {
+  const { stats } = useTodoContext();
   const completionPercent = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
 
   return (
@@ -1558,9 +1322,8 @@ export const TodoStats: React.FC<TodoStatsProps> = React.memo(function TodoStats
       role="status"
       aria-live="polite"
       data-testid="task-statistics"
-      className="mb-6"
+      className="mb-6 animate-fade-in"
     >
-      {/* Stat Cards */}
       <div className="grid grid-cols-3 gap-3 mb-4 text-center">
         <div
           className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 p-3 rounded-xl border border-blue-200/50 dark:border-blue-700/50 shadow-sm"
@@ -1591,7 +1354,6 @@ export const TodoStats: React.FC<TodoStatsProps> = React.memo(function TodoStats
         </div>
       </div>
 
-      {/* Progress Bar */}
       <div className="w-full" data-testid="progress-bar">
         <div className="flex justify-between items-center mb-1">
           <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Progress</span>

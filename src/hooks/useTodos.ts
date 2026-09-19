@@ -4,7 +4,7 @@
  */
 
 import { useState, useMemo, useCallback } from 'react';
-import { Todo, Priority, StatusFilter, SortOption, TodoStats } from '../types';
+import { Todo, Priority, StatusFilter, TodoStats } from '../types';
 import { useLocalStorage } from './useLocalStorage';
 import { sanitizeInput, isValidTaskTitle } from '../utils/sanitize';
 import { STORAGE_KEY } from '../utils/constants';
@@ -24,8 +24,6 @@ export interface UseTodosReturn {
   setStatusFilter: (filter: StatusFilter) => void;
   priorityFilter: 'All' | Priority;
   setPriorityFilter: (filter: 'All' | Priority) => void;
-  sortOption: SortOption;
-  setSortOption: (option: SortOption) => void;
 }
 
 export function useTodos(): UseTodosReturn {
@@ -33,7 +31,6 @@ export function useTodos(): UseTodosReturn {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
   const [priorityFilter, setPriorityFilter] = useState<'All' | Priority>('All');
-  const [sortOption, setSortOption] = useState<SortOption>('date');
 
   const addTodo = useCallback((text: string, priority: Priority) => {
     const sanitizedText = sanitizeInput(text);
@@ -75,27 +72,14 @@ export function useTodos(): UseTodosReturn {
   const hasFilters = searchQuery !== '' || statusFilter !== 'All' || priorityFilter !== 'All';
 
   const processedTodos = useMemo(() => {
-    const filtered = todos.filter((todo) => {
+    return todos.filter((todo) => {
       const matchesSearch = todo.text.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus =
         statusFilter === 'All' ? true : statusFilter === 'Active' ? !todo.completed : todo.completed;
       const matchesPriority = priorityFilter === 'All' ? true : todo.priority === priorityFilter;
       return matchesSearch && matchesStatus && matchesPriority;
     });
-
-    const priorityOrder: Record<Priority, number> = { High: 3, Medium: 2, Low: 1 };
-    
-    return filtered.sort((a, b) => {
-      if (sortOption === 'priority') {
-        return (priorityOrder[b.priority] ?? 0) - (priorityOrder[a.priority] ?? 0);
-      }
-      if (sortOption === 'alphabetical') {
-        return a.text.localeCompare(b.text);
-      }
-      // Default: Newest First
-      return b.createdAt - a.createdAt;
-    });
-  }, [todos, searchQuery, statusFilter, priorityFilter, sortOption]);
+  }, [todos, searchQuery, statusFilter, priorityFilter]);
 
   const stats: TodoStats = useMemo(() => ({
     total: todos.length,
@@ -118,7 +102,5 @@ export function useTodos(): UseTodosReturn {
     setStatusFilter,
     priorityFilter,
     setPriorityFilter,
-    sortOption,
-    setSortOption,
   };
 }

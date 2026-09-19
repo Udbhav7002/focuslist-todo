@@ -6,25 +6,24 @@
 import React from 'react';
 import { SearchIcon } from './Icons';
 import { useTodoContext } from '../context/TodoContext';
-import { STATUS_FILTER_OPTIONS, PRIORITY_OPTIONS, SORT_OPTIONS } from '../utils/constants';
+import { STATUS_FILTER_OPTIONS, PRIORITY_OPTIONS } from '../utils/constants';
 
 export const TodoFilters: React.FC = React.memo(function TodoFilters() {
   const {
     searchQuery, setSearchQuery,
     statusFilter, setStatusFilter,
-    priorityFilter, setPriorityFilter,
-    sortOption, setSortOption
+    priorityFilter, setPriorityFilter
   } = useTodoContext();
 
   const baseSelectClasses = "px-3 py-2 text-sm border-none bg-white dark:bg-gray-700 dark:text-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium cursor-pointer w-full";
 
   return (
     <section
-      className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 bg-gray-50/80 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-200 dark:border-gray-700 animate-fade-in"
+      className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 bg-gray-50/80 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-200 dark:border-gray-700 animate-fade-in"
       aria-label="Filter and search tasks"
       data-testid="todo-filters"
     >
-      <div className="relative col-span-2 sm:col-span-4">
+      <div className="relative col-span-1 sm:col-span-1">
         <SearchIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none" aria-hidden={true} />
         <label htmlFor="search-tasks" className="sr-only">Search tasks by title</label>
         <input
@@ -39,7 +38,7 @@ export const TodoFilters: React.FC = React.memo(function TodoFilters() {
         />
       </div>
 
-      <div className="col-span-2 sm:col-span-2">
+      <div className="col-span-1 sm:col-span-1">
         <label htmlFor="status-filter" className="sr-only">Filter by status</label>
         <select
           id="status-filter"
@@ -67,22 +66,6 @@ export const TodoFilters: React.FC = React.memo(function TodoFilters() {
         >
           <option value="All">All Priority</option>
           {PRIORITY_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className="col-span-1 sm:col-span-1">
-        <label htmlFor="sort-filter" className="sr-only">Sort tasks</label>
-        <select
-          id="sort-filter"
-          value={sortOption}
-          onChange={(e) => setSortOption(e.target.value as typeof sortOption)}
-          className={baseSelectClasses}
-          aria-label="Sort tasks"
-          data-testid="sort-filter"
-        >
-          {SORT_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
