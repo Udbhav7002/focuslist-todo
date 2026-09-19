@@ -1,0 +1,12 @@
+{
+  "name": "FocusList — To-Do Application",
+  "short_name": "FocusList",
+  "description": "A clean, accessible, responsive To-Do app.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#2563eb",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

@@ -1,19 +1,15 @@
 /**
  * @fileoverview Application entry point for FocusList.
- * Mounts the root React component into the DOM using React 18's createRoot API.
- * Wraps the application in React.StrictMode for development-time checks.
+ * Mounts the root React component using React 18's createRoot API,
+ * wrapped in StrictMode for development-time checks.
  * @module main
  */
 
-import React from 'react';
-import ReactDOM from 'react-dom/client';
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-/**
- * The root DOM element where the React application is mounted.
- * Throws an error if the element is not found to prevent silent failures.
- */
 const rootElement = document.getElementById('root');
 
 if (!rootElement) {
@@ -22,8 +18,8 @@ if (!rootElement) {
   );
 }
 
-ReactDOM.createRoot(rootElement).render(
-  <React.StrictMode>
+createRoot(rootElement).render(
+  <StrictMode>
     <App />
-  </React.StrictMode>
+  </StrictMode>
 );

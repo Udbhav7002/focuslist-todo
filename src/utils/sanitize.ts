@@ -1,23 +1,14 @@
 /**
- * @fileoverview Input sanitization utilities for the FocusList To-Do application.
- * Prevents XSS attacks and ensures data integrity by sanitizing user inputs
- * before they are stored or rendered.
+ * @fileoverview Input sanitization utilities. Prevents XSS and validates
+ * user input before it is stored or rendered.
  * @module utils/sanitize
  */
 
+import { MAX_TAGS } from './constants';
+
 /**
- * Sanitizes a user-provided string by removing potentially dangerous HTML
- * characters and trimming whitespace. This prevents XSS (Cross-Site Scripting)
- * attacks when rendering user-generated content.
- *
- * @param {string} input - The raw user input string to sanitize.
- * @returns {string} The sanitized string, safe for storage and rendering.
- *
- * @example
- * ```ts
- * sanitizeInput('<script>alert("xss")</script>') // Returns: '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;'
- * sanitizeInput('  Buy groceries  ') // Returns: 'Buy groceries'
- * ```
+ * Sanitizes a user-provided string: trims whitespace and escapes HTML
+ * metacharacters so the value is safe to store and render as text.
  */
 export function sanitizeInput(input: string): string {
   return input
@@ -29,20 +20,24 @@ export function sanitizeInput(input: string): string {
     .replace(/'/g, '&#x27;');
 }
 
-/**
- * Validates that a task title meets the minimum requirements.
- * A valid task title must be a non-empty string after trimming whitespace.
- *
- * @param {string} text - The task title to validate.
- * @returns {boolean} True if the task title is valid, false otherwise.
- *
- * @example
- * ```ts
- * isValidTaskTitle('Buy groceries') // Returns: true
- * isValidTaskTitle('   ')           // Returns: false
- * isValidTaskTitle('')              // Returns: false
- * ```
- */
+/** True when a (raw) task title is non-empty after trimming. */
 export function isValidTaskTitle(text: string): boolean {
   return text.trim().length > 0;
+}
+
+/**
+ * Parses a comma-separated tag string into a sanitized, deduplicated,
+ * length-capped tag list. Internal whitespace becomes dashes.
+ */
+export function parseTags(raw: string, max: number = MAX_TAGS): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const part of raw.split(',')) {
+    const tag = sanitizeInput(part).replace(/\s+/g, '-');
+    if (tag && !seen.has(tag.toLowerCase()) && out.length < max) {
+      seen.add(tag.toLowerCase());
+      out.push(tag);
+    }
+  }
+  return out;
 }

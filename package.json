@@ -1,14 +1,15 @@
 {
   "name": "focuslist-todo",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
-  "description": "FocusList — A clean, accessible, frontend-only To-Do application with priorities, search, filtering, and dark mode.",
+  "description": "FocusList — an accessible, performant, frontend-only To-Do app with priorities, due dates, tags, drag reorder, undo, and a command palette.",
   "author": "Udbhav Sanagari",
   "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
