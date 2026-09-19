@@ -21,7 +21,7 @@ export interface TodoListProps {
   onDelete: (id: string) => void;
   onEdit: (id: string, patch: Partial<Pick<Todo, 'text' | 'priority' | 'dueDate' | 'tags'>>) => void;
   onMove: (id: string, direction: -1 | 1) => void;
-  onReorder: (sourceId: string, targetId: string) => void;
+  onReorder: (sourceId: string, targetId: string, position: 'above' | 'below') => void;
   onCreateFirst: () => void;
   onClearFilters: () => void;
 }
@@ -111,8 +111,8 @@ export const TodoList = memo(function TodoList({
     }
   };
 
-  const handleDrop = (targetId: string) => {
-    if (draggingId && draggingId !== targetId) onReorder(draggingId, targetId);
+  const handleDrop = (targetId: string, position: 'above' | 'below') => {
+    if (draggingId && draggingId !== targetId) onReorder(draggingId, targetId, position);
     setDraggingId(null);
     setOverId(null);
   };

@@ -40,7 +40,7 @@ export interface TodoItemProps {
   onMove: (id: string, direction: -1 | 1) => void;
   onDragStartItem: (id: string) => void;
   onDragOverItem: (id: string) => void;
-  onDropItem: (id: string) => void;
+  onDropItem: (id: string, position: 'above' | 'below') => void;
   onDragEnd: () => void;
 }
 
@@ -152,7 +152,7 @@ export const TodoItem = memo(function TodoItem({
       onDragOver={handleDragOver}
       onDrop={(e) => {
         e.preventDefault();
-        onDropItem(todo.id);
+        onDropItem(todo.id, dropPosition ?? 'below');
         setDropPosition(null);
       }}
       onDragLeave={() => setDropPosition(null)}

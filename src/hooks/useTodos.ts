@@ -70,7 +70,7 @@ export interface UseTodosReturn {
   /** Swaps a task with its order-neighbor (keyboard reorder). */
   moveTodo: (id: string, direction: -1 | 1) => void;
   /** Inserts `sourceId` at the position of `targetId` (drag & drop). */
-  reorderTodos: (sourceId: string, targetId: string) => void;
+  reorderTodos: (sourceId: string, targetId: string, position: 'above' | 'below') => void;
   /** Replaces the whole list with an imported, normalized list. */
   importTodos: (list: Todo[]) => void;
   setSearch: (v: string) => void;
@@ -200,18 +200,22 @@ export function useTodos(): UseTodosReturn {
     [setTodos]
   );
 
-  const reorderTodos = useCallback(
-    (sourceId: string, targetId: string) => {
+  const reorderTodos = useCallback<UseTodosReturn['reorderTodos']>(
+    (sourceId, targetId, position) => {
       if (sourceId === targetId) return;
       setTodos((prev) => {
         const sorted = [...prev].sort((a, b) => a.order - b.order);
-        const from = sorted.findIndex((t) => t.id === sourceId);
-        const to = sorted.findIndex((t) => t.id === targetId);
-        if (from === -1 || to === -1) return prev;
-        const [moved] = sorted.splice(from, 1);
-        if (!moved) return prev;
-        sorted.splice(to, 0, moved);
-        return sorted.map((t, i) => ({ ...t, order: i }));
+        const sourceTodo = sorted.find((t) => t.id === sourceId);
+        if (!sourceTodo) return prev;
+        
+        const withoutSource = sorted.filter((t) => t.id !== sourceId);
+        let targetIndex = withoutSource.findIndex((t) => t.id === targetId);
+        if (targetIndex === -1) return prev;
+        
+        if (position === 'below') targetIndex += 1;
+        
+        withoutSource.splice(targetIndex, 0, sourceTodo);
+        return withoutSource.map((t, i) => ({ ...t, order: i }));
       });
     },
     [setTodos]
