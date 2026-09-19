@@ -1,84 +1,234 @@
-import { TodoForm } from './components/TodoForm';
-import { TodoItem } from './components/TodoItem';
-import { TodoStats } from './components/TodoStats';
-import { useTodos } from './hooks/useTodos';
-import { Search } from 'lucide-react';
+/**
+ * @fileoverview Root application component for FocusList — a frontend-only To-Do application.
+ *
+ * FocusList allows users to create, manage, and organize their daily tasks
+ * with priority levels, search, filtering, and data persistence.
+ *
+ * Features:
+ * - Task CRUD (Create, Read, Update, Delete)
+ * - Priority assignment (High, Medium, Low)
+ * - Real-time search and filtering
+ * - Task statistics dashboard with progress bar
+ * - Dark mode with system preference detection
+ * - Keyboard shortcuts for power users
+ * - LocalStorage persistence
+ * - Full accessibility (ARIA, keyboard navigation)
+ *
+ * @module App
+ */
 
+import { useCallback, useEffect, useState } from 'react';
+import { TodoForm } from './components/TodoForm';
+import { TodoList } from './components/TodoList';
+import { TodoStats } from './components/TodoStats';
+import { TodoFilters } from './components/TodoFilters';
+import { useTodos } from './hooks/useTodos';
+import { useLocalStorage } from './hooks/useLocalStorage';
+import { THEME_STORAGE_KEY, KEYBOARD_SHORTCUTS } from './utils/constants';
+import { Sun, Moon, Trash2, Keyboard } from 'lucide-react';
+
+/**
+ * The root application component. Composes all feature components and manages
+ * global concerns like theming and keyboard shortcuts.
+ *
+ * @returns {React.ReactElement} The complete FocusList application.
+ */
 function App() {
   const {
-    todos, stats, addTodo, toggleTodo, deleteTodo, editTodo,
-    searchQuery, setSearchQuery, statusFilter, setStatusFilter,
-    priorityFilter, setPriorityFilter
+    todos,
+    stats,
+    addTodo,
+    toggleTodo,
+    deleteTodo,
+    editTodo,
+    clearCompleted,
+    searchQuery,
+    setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    priorityFilter,
+    setPriorityFilter,
   } = useTodos();
 
+  /* ─── Dark Mode ─── */
+  const [darkMode, setDarkMode] = useLocalStorage<boolean>(THEME_STORAGE_KEY, () => {
+    if (typeof window !== 'undefined') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
+
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  /** Apply or remove the `dark` class on the document root element. */
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode);
+  }, [darkMode]);
+
+  /** Toggles between light and dark mode. */
+  const toggleDarkMode = useCallback(() => {
+    setDarkMode((prev: boolean) => !prev);
+  }, [setDarkMode]);
+
+  /** Whether any filter is actively narrowing the task list. */
+  const hasFilters = searchQuery !== '' || statusFilter !== 'All' || priorityFilter !== 'All';
+
+  /**
+   * Global keyboard shortcut handler.
+   * - Press 'n' to focus the new task input.
+   * - Press '/' to focus the search input.
+   * - Press 'd' to toggle dark mode.
+   */
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip if user is typing in an input, textarea, or select
+      const tag = (e.target as HTMLElement).tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+
+      switch (e.key.toLowerCase()) {
+        case KEYBOARD_SHORTCUTS.NEW_TASK: {
+          e.preventDefault();
+          const taskInput = document.getElementById('new-task-input');
+          taskInput?.focus();
+          break;
+        }
+        case KEYBOARD_SHORTCUTS.SEARCH: {
+          e.preventDefault();
+          const searchInput = document.getElementById('search-tasks');
+          searchInput?.focus();
+          break;
+        }
+        case KEYBOARD_SHORTCUTS.TOGGLE_THEME: {
+          e.preventDefault();
+          toggleDarkMode();
+          break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [toggleDarkMode]);
+
   return (
-    <div className="min-h-screen bg-gray-50 flex items-start justify-center p-4 sm:p-8 font-sans selection:bg-blue-200">
-      <main className="w-full max-w-2xl bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8 overflow-hidden">
-        <header className="mb-8 text-center sm:text-left flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-gray-100 pb-6">
-          <div>
-            <h1 className="text-4xl font-black text-gray-900 tracking-tight">FocusList</h1>
-            <p className="text-gray-500 text-sm font-medium mt-1 uppercase tracking-widest">Build. Organize. Simplify.</p>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-start justify-center p-4 sm:p-8 font-sans selection:bg-blue-200 dark:selection:bg-blue-800 transition-colors duration-300">
+      {/* Skip to content link for accessibility */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:bg-blue-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:outline-none"
+      >
+        Skip to main content
+      </a>
+
+      <main
+        id="main-content"
+        className="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-6 sm:p-8 overflow-hidden transition-colors duration-300"
+        role="main"
+        data-testid="focuslist-app"
+      >
+        {/* ─── Header ─── */}
+        <header className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-700 pb-6">
+          <div className="text-center sm:text-left">
+            <h1
+              className="text-4xl font-black text-gray-900 dark:text-white tracking-tight"
+              data-testid="app-title"
+            >
+              FocusList
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mt-1 uppercase tracking-widest">
+              Build. Organize. Simplify.
+            </p>
+          </div>
+
+          {/* Theme toggle & shortcuts */}
+          <div className="flex items-center justify-center gap-2">
+            <button
+              onClick={() => setShowShortcuts((v) => !v)}
+              className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors"
+              aria-label="Toggle keyboard shortcuts help"
+              data-testid="shortcuts-toggle"
+            >
+              <Keyboard className="w-5 h-5" aria-hidden="true" />
+            </button>
+            <button
+              onClick={toggleDarkMode}
+              className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors"
+              aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              data-testid="theme-toggle"
+            >
+              {darkMode ? (
+                <Sun className="w-5 h-5" aria-hidden="true" />
+              ) : (
+                <Moon className="w-5 h-5" aria-hidden="true" />
+              )}
+            </button>
           </div>
         </header>
 
+        {/* Keyboard Shortcuts Help Panel */}
+        {showShortcuts && (
+          <div
+            className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-xl text-sm text-blue-800 dark:text-blue-200"
+            role="note"
+            data-testid="shortcuts-panel"
+          >
+            <p className="font-bold mb-2">⌨️ Keyboard Shortcuts</p>
+            <ul className="space-y-1">
+              <li><kbd className="px-1.5 py-0.5 bg-white dark:bg-gray-700 rounded border text-xs font-mono">N</kbd> — New task</li>
+              <li><kbd className="px-1.5 py-0.5 bg-white dark:bg-gray-700 rounded border text-xs font-mono">/</kbd> — Search tasks</li>
+              <li><kbd className="px-1.5 py-0.5 bg-white dark:bg-gray-700 rounded border text-xs font-mono">D</kbd> — Toggle dark mode</li>
+              <li><kbd className="px-1.5 py-0.5 bg-white dark:bg-gray-700 rounded border text-xs font-mono">Enter</kbd> — Save edit</li>
+              <li><kbd className="px-1.5 py-0.5 bg-white dark:bg-gray-700 rounded border text-xs font-mono">Esc</kbd> — Cancel edit</li>
+            </ul>
+          </div>
+        )}
+
+        {/* ─── Statistics ─── */}
         <TodoStats stats={stats} />
+
+        {/* ─── Task Creation ─── */}
         <TodoForm onAdd={addTodo} />
 
-        <div className="flex flex-col sm:flex-row gap-3 mb-6 bg-gray-50/80 p-2.5 rounded-xl border border-gray-200 shadow-inner">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search tasks..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm border-none bg-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
-              aria-label="Search tasks"
-            />
-          </div>
-          <div className="flex gap-2">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="px-3 py-2 text-sm border-none bg-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-gray-700 cursor-pointer"
-              aria-label="Filter by status"
-            >
-              <option value="All">All Status</option>
-              <option value="Active">Active</option>
-              <option value="Completed">Completed</option>
-            </select>
-            <select
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value as any)}
-              className="px-3 py-2 text-sm border-none bg-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-gray-700 cursor-pointer"
-              aria-label="Filter by priority"
-            >
-              <option value="All">All Priority</option>
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
-            </select>
-          </div>
-        </div>
+        {/* ─── Filters ─── */}
+        <TodoFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          priorityFilter={priorityFilter}
+          onPriorityFilterChange={setPriorityFilter}
+        />
 
-        <ul className="space-y-3" aria-label="Task list">
-          {todos.length === 0 ? (
-            <div className="text-center py-12 px-4 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50/50">
-              <p className="text-gray-500 font-medium">No tasks found in this view.</p>
-              <p className="text-sm text-gray-400 mt-1">Try adjusting your filters or add a new task above!</p>
-            </div>
-          ) : (
-            todos.map((todo) => (
-              <TodoItem
-                key={todo.id}
-                todo={todo}
-                onToggle={toggleTodo}
-                onDelete={deleteTodo}
-                onEdit={editTodo}
-              />
-            ))
-          )}
-        </ul>
+        {/* ─── Task List ─── */}
+        <TodoList
+          todos={todos}
+          hasFilters={hasFilters}
+          onToggle={toggleTodo}
+          onDelete={deleteTodo}
+          onEdit={editTodo}
+        />
+
+        {/* ─── Clear Completed Button ─── */}
+        {stats.completed > 0 && (
+          <div className="mt-6 flex justify-center">
+            <button
+              onClick={clearCompleted}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg border border-red-200 dark:border-red-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 transition-colors"
+              aria-label={`Clear ${stats.completed} completed tasks`}
+              data-testid="clear-completed-button"
+            >
+              <Trash2 className="w-4 h-4" aria-hidden="true" />
+              Clear Completed ({stats.completed})
+            </button>
+          </div>
+        )}
+
+        {/* ─── Footer ─── */}
+        <footer className="mt-8 pt-4 border-t border-gray-100 dark:border-gray-700 text-center">
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            FocusList — Built with React, TypeScript & Tailwind CSS
+          </p>
+        </footer>
       </main>
     </div>
   );

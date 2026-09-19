@@ -1,52 +1,102 @@
-import { useState } from 'react';
-import { PlusCircle } from 'lucide-react';
-import { Priority } from '../types';
+/**
+ * @fileoverview TodoForm component for the FocusList To-Do application.
+ * Provides the task creation interface with title input and priority selection.
+ * @module components/TodoForm
+ */
 
+import React, { useState, useRef } from 'react';
+import { PlusCircle } from 'lucide-react';
+import type { Priority } from '../types';
+import { PRIORITY_OPTIONS, MAX_TASK_LENGTH } from '../utils/constants';
+
+/**
+ * Props for the TodoForm component.
+ */
 interface TodoFormProps {
+  /** Callback invoked when the user submits a new task. */
   onAdd: (text: string, priority: Priority) => void;
 }
 
-export function TodoForm({ onAdd }: TodoFormProps) {
+/**
+ * Renders the task creation form with a text input, priority selector, and submit button.
+ * Validates input before submission and provides visual feedback for disabled states.
+ * The input field can be focused programmatically via the exposed ref (keyboard shortcut).
+ *
+ * @param {TodoFormProps} props - Component props.
+ * @returns {React.ReactElement} The rendered task creation form.
+ */
+export const TodoForm: React.FC<TodoFormProps> = React.memo(function TodoForm({ onAdd }) {
   const [inputValue, setInputValue] = useState('');
   const [priorityInput, setPriorityInput] = useState<Priority>('Medium');
+  const inputRef = useRef<HTMLInputElement>(null);
 
+  /**
+   * Handles form submission. Validates, submits, and resets the form.
+   * @param {React.FormEvent} e - The form submit event.
+   */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputValue.trim()) return;
-    onAdd(inputValue.trim(), priorityInput);
+    const trimmed = inputValue.trim();
+    if (!trimmed) return;
+
+    onAdd(trimmed, priorityInput);
     setInputValue('');
     setPriorityInput('Medium');
+    inputRef.current?.focus();
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 mb-6 flex-wrap sm:flex-nowrap bg-white p-1 rounded-xl shadow-sm border border-gray-100">
+    <form
+      onSubmit={handleSubmit}
+      className="flex gap-2 mb-6 flex-wrap sm:flex-nowrap bg-white dark:bg-gray-800 p-1.5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+      aria-label="Create a new task"
+      data-testid="todo-form"
+    >
+      <label htmlFor="new-task-input" className="sr-only">
+        Task title
+      </label>
       <input
+        ref={inputRef}
+        id="new-task-input"
         type="text"
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         placeholder="What needs to be done?"
-        className="flex-1 min-w-[200px] px-4 py-2 bg-transparent focus:outline-none"
-        aria-label="New task input"
+        maxLength={MAX_TASK_LENGTH}
+        className="flex-1 min-w-[180px] px-4 py-2.5 bg-transparent dark:text-gray-100 focus:outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500"
+        aria-label="Enter a task title"
+        data-testid="task-input"
+        autoComplete="off"
       />
+
+      <label htmlFor="priority-select" className="sr-only">
+        Priority level
+      </label>
       <select
+        id="priority-select"
         value={priorityInput}
         onChange={(e) => setPriorityInput(e.target.value as Priority)}
-        className="px-3 py-2 border-l border-gray-100 bg-transparent focus:outline-none text-sm text-gray-600"
-        aria-label="Select priority"
+        className="px-3 py-2 border-l border-gray-200 dark:border-gray-600 bg-transparent dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg text-sm cursor-pointer"
+        aria-label="Select task priority"
+        data-testid="priority-select"
       >
-        <option value="High">High</option>
-        <option value="Medium">Medium</option>
-        <option value="Low">Low</option>
+        {PRIORITY_OPTIONS.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
       </select>
+
       <button
         type="submit"
         disabled={!inputValue.trim()}
-        className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+        className="bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 font-medium"
         aria-label="Add task"
+        data-testid="add-task-button"
       >
-        <PlusCircle className="w-4 h-4" />
-        <span className="hidden sm:inline font-medium">Add</span>
+        <PlusCircle className="w-4 h-4" aria-hidden="true" />
+        <span className="hidden sm:inline">Add Task</span>
       </button>
     </form>
   );
-}
+});

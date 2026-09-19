@@ -1,93 +1,201 @@
-import { useState } from 'react';
-import { Trash2, CheckCircle2, Circle, Pencil, X } from 'lucide-react';
-import { Todo } from '../types';
+/**
+ * @fileoverview TodoItem component for the FocusList To-Do application.
+ * Renders an individual task with toggle, edit, and delete capabilities.
+ * Supports inline editing with keyboard shortcuts (Enter to save, Escape to cancel).
+ * @module components/TodoItem
+ */
 
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { Trash2, CheckCircle2, Circle, Pencil, Check, X } from 'lucide-react';
+import type { Todo } from '../types';
+import { PRIORITY_COLORS } from '../utils/constants';
+
+/**
+ * Props for the TodoItem component.
+ */
 interface TodoItemProps {
+  /** The todo object to render. */
   todo: Todo;
+  /** Callback to toggle the task's completion status. */
   onToggle: (id: string) => void;
+  /** Callback to permanently delete the task. */
   onDelete: (id: string) => void;
+  /** Callback to update the task's title text. */
   onEdit: (id: string, newText: string) => void;
 }
 
-export function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
+/**
+ * Renders a single task item with completion toggle, inline editing, priority badge,
+ * and delete functionality. Supports full keyboard navigation and accessibility.
+ *
+ * Keyboard interactions:
+ * - **Enter**: Save the edited task title.
+ * - **Escape**: Cancel editing and revert to the original title.
+ *
+ * @param {TodoItemProps} props - Component props.
+ * @returns {React.ReactElement} The rendered task item.
+ */
+export const TodoItem: React.FC<TodoItemProps> = React.memo(function TodoItem({
+  todo,
+  onToggle,
+  onDelete,
+  onEdit,
+}) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(todo.text);
+  const editInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSave = () => {
-    if (editValue.trim()) {
-      onEdit(todo.id, editValue.trim());
-      setIsEditing(false);
+  /** Focus the edit input when entering edit mode. */
+  useEffect(() => {
+    if (isEditing && editInputRef.current) {
+      editInputRef.current.focus();
+      editInputRef.current.select();
     }
-  };
+  }, [isEditing]);
 
-  const getPriorityColor = (p: string) => {
-    switch (p) {
-      case 'High': return 'text-red-600 bg-red-100';
-      case 'Medium': return 'text-yellow-600 bg-yellow-100';
-      case 'Low': return 'text-blue-600 bg-blue-100';
-      default: return 'text-gray-600 bg-gray-100';
+  /** Saves the edited title if it's valid and exits edit mode. */
+  const handleSave = useCallback(() => {
+    const trimmed = editValue.trim();
+    if (trimmed && trimmed !== todo.text) {
+      onEdit(todo.id, trimmed);
     }
-  };
+    setIsEditing(false);
+  }, [editValue, todo.id, todo.text, onEdit]);
+
+  /** Cancels editing and reverts to the original title. */
+  const handleCancel = useCallback(() => {
+    setEditValue(todo.text);
+    setIsEditing(false);
+  }, [todo.text]);
+
+  /**
+   * Handles keyboard interactions during edit mode.
+   * @param {React.KeyboardEvent} e - The keyboard event.
+   */
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSave();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        handleCancel();
+      }
+    },
+    [handleSave, handleCancel]
+  );
+
+  /** Enters edit mode and initializes the edit value. */
+  const startEditing = useCallback(() => {
+    setEditValue(todo.text);
+    setIsEditing(true);
+  }, [todo.text]);
 
   return (
     <li
-      className={`flex items-center justify-between p-3 rounded-lg border transition-all duration-200 ${
-        todo.completed ? 'bg-gray-50 border-gray-200 opacity-75' : 'bg-white border-gray-200 shadow-sm hover:shadow-md'
+      className={`group flex items-center justify-between p-3 sm:p-4 rounded-xl border transition-all duration-200 ${
+        todo.completed
+          ? 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 opacity-70'
+          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md'
       }`}
+      data-testid="todo-item"
+      aria-label={`Task: ${todo.text}, Priority: ${todo.priority}, ${todo.completed ? 'Completed' : 'Active'}`}
     >
       <div className="flex items-center gap-3 flex-1 overflow-hidden">
+        {/* Toggle completion */}
         <button
           onClick={() => onToggle(todo.id)}
-          className="text-gray-400 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full transition-colors"
-          aria-label={todo.completed ? 'Mark as incomplete' : 'Mark as complete'}
+          className="flex-shrink-0 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-full transition-colors p-0.5"
+          aria-label={todo.completed ? 'Mark task as incomplete' : 'Mark task as complete'}
           aria-pressed={todo.completed}
+          data-testid="toggle-task"
         >
-          {todo.completed ? <CheckCircle2 className="w-6 h-6 text-green-500" /> : <Circle className="w-6 h-6" />}
+          {todo.completed ? (
+            <CheckCircle2 className="w-6 h-6 text-green-500" aria-hidden="true" />
+          ) : (
+            <Circle className="w-6 h-6" aria-hidden="true" />
+          )}
         </button>
 
+        {/* Task content — edit mode or display mode */}
         {isEditing ? (
-          <div className="flex-1 flex gap-2">
+          <div className="flex-1 flex gap-2 items-center">
+            <label htmlFor={`edit-${todo.id}`} className="sr-only">
+              Edit task title
+            </label>
             <input
+              ref={editInputRef}
+              id={`edit-${todo.id}`}
               type="text"
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-              className="flex-1 px-2 py-1 text-sm border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              autoFocus
+              onKeyDown={handleKeyDown}
+              onBlur={handleSave}
+              className="flex-1 px-3 py-1.5 text-sm border border-blue-400 dark:border-blue-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Edit task title"
+              data-testid="edit-task-input"
             />
-            <button onClick={handleSave} className="text-sm px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors">Save</button>
-            <button onClick={() => setIsEditing(false)} className="text-gray-500 hover:bg-gray-100 p-1 rounded transition-colors"><X className="w-4 h-4" /></button>
+            <button
+              onClick={handleSave}
+              className="text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 p-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+              aria-label="Save edit"
+              data-testid="save-edit-button"
+            >
+              <Check className="w-4 h-4" aria-hidden="true" />
+            </button>
+            <button
+              onClick={handleCancel}
+              className="text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 p-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500"
+              aria-label="Cancel edit"
+              data-testid="cancel-edit-button"
+            >
+              <X className="w-4 h-4" aria-hidden="true" />
+            </button>
           </div>
         ) : (
-          <div className="flex flex-col overflow-hidden">
-            <span className={`truncate transition-all ${todo.completed ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+          <div className="flex flex-col overflow-hidden gap-1">
+            <span
+              className={`truncate transition-all text-sm sm:text-base ${
+                todo.completed
+                  ? 'text-gray-400 dark:text-gray-500 line-through'
+                  : 'text-gray-800 dark:text-gray-100'
+              }`}
+              data-testid="task-title"
+            >
               {todo.text}
             </span>
-            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full inline-block mt-1 w-max ${getPriorityColor(todo.priority)}`}>
+            <span
+              className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full inline-block w-max border ${PRIORITY_COLORS[todo.priority]}`}
+              data-testid="task-priority"
+              aria-label={`Priority: ${todo.priority}`}
+            >
               {todo.priority}
             </span>
           </div>
         )}
       </div>
 
+      {/* Action buttons — visible on hover or focus */}
       {!isEditing && (
-        <div className="flex gap-1 flex-shrink-0 ml-2 opacity-0 sm:opacity-100 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+        <div className="flex gap-1 flex-shrink-0 ml-2 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity">
           <button
-            onClick={() => setIsEditing(true)}
-            className="text-gray-400 hover:text-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded p-1.5 transition-colors"
+            onClick={startEditing}
+            className="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-1.5 transition-colors"
             aria-label={`Edit task: ${todo.text}`}
+            data-testid="edit-task-button"
           >
-            <Pencil className="w-4 h-4" />
+            <Pencil className="w-4 h-4" aria-hidden="true" />
           </button>
           <button
             onClick={() => onDelete(todo.id)}
-            className="text-gray-400 hover:text-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 rounded p-1.5 transition-colors"
+            className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded-lg p-1.5 transition-colors"
             aria-label={`Delete task: ${todo.text}`}
+            data-testid="delete-task-button"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
       )}
     </li>
   );
-}
+});

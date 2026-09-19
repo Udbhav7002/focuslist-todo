@@ -1,22 +1,92 @@
+/**
+ * @fileoverview TodoStats component for the FocusList To-Do application.
+ * Displays real-time statistics about the user's task list including
+ * total tasks, completed tasks, and pending tasks counts.
+ * @module components/TodoStats
+ */
+
+import React from 'react';
+import type { TodoStats as TodoStatsType } from '../types';
+
+/**
+ * Props for the TodoStats component.
+ */
 interface TodoStatsProps {
-  stats: { total: number; completed: number; pending: number };
+  /** The computed statistics object containing total, completed, and pending counts. */
+  stats: TodoStatsType;
 }
 
-export function TodoStats({ stats }: TodoStatsProps) {
+/**
+ * Renders a responsive statistics dashboard showing task counts.
+ * Uses an ARIA live region so screen readers announce updates when task data changes.
+ * Wrapped in React.memo to prevent unnecessary re-renders when stats haven't changed.
+ *
+ * @param {TodoStatsProps} props - Component props.
+ * @returns {React.ReactElement} The rendered statistics dashboard.
+ */
+export const TodoStats: React.FC<TodoStatsProps> = React.memo(function TodoStats({ stats }) {
+  /** Completion percentage for the progress bar (0–100). */
+  const completionPercent = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+
   return (
-    <div className="grid grid-cols-3 gap-3 mb-6 text-center">
-      <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-xl border border-blue-200/50 shadow-sm">
-        <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest mb-1">Total</p>
-        <p className="text-2xl font-black text-blue-900">{stats.total}</p>
+    <section
+      aria-label="Task statistics"
+      role="status"
+      aria-live="polite"
+      data-testid="task-statistics"
+      className="mb-6"
+    >
+      {/* Stat Cards */}
+      <div className="grid grid-cols-3 gap-3 mb-4 text-center">
+        <div
+          className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 p-3 rounded-xl border border-blue-200/50 dark:border-blue-700/50 shadow-sm"
+          data-testid="total-tasks-stat"
+        >
+          <p className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-widest mb-1">
+            Total Tasks
+          </p>
+          <p className="text-2xl font-black text-blue-900 dark:text-blue-100">{stats.total}</p>
+        </div>
+        <div
+          className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 p-3 rounded-xl border border-orange-200/50 dark:border-orange-700/50 shadow-sm"
+          data-testid="pending-tasks-stat"
+        >
+          <p className="text-[10px] text-orange-600 dark:text-orange-400 font-bold uppercase tracking-widest mb-1">
+            Pending Tasks
+          </p>
+          <p className="text-2xl font-black text-orange-900 dark:text-orange-100">{stats.pending}</p>
+        </div>
+        <div
+          className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 p-3 rounded-xl border border-green-200/50 dark:border-green-700/50 shadow-sm"
+          data-testid="completed-tasks-stat"
+        >
+          <p className="text-[10px] text-green-600 dark:text-green-400 font-bold uppercase tracking-widest mb-1">
+            Completed Tasks
+          </p>
+          <p className="text-2xl font-black text-green-900 dark:text-green-100">{stats.completed}</p>
+        </div>
       </div>
-      <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-3 rounded-xl border border-orange-200/50 shadow-sm">
-        <p className="text-[10px] text-orange-600 font-bold uppercase tracking-widest mb-1">Pending</p>
-        <p className="text-2xl font-black text-orange-900">{stats.pending}</p>
+
+      {/* Progress Bar */}
+      <div className="w-full" data-testid="progress-bar">
+        <div className="flex justify-between items-center mb-1">
+          <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Progress</span>
+          <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{completionPercent}%</span>
+        </div>
+        <div
+          className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden"
+          role="progressbar"
+          aria-valuenow={completionPercent}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`Task completion: ${completionPercent}% complete`}
+        >
+          <div
+            className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500 ease-out"
+            style={{ width: `${completionPercent}%` }}
+          />
+        </div>
       </div>
-      <div className="bg-gradient-to-br from-green-50 to-green-100 p-3 rounded-xl border border-green-200/50 shadow-sm">
-        <p className="text-[10px] text-green-600 font-bold uppercase tracking-widest mb-1">Done</p>
-        <p className="text-2xl font-black text-green-900">{stats.completed}</p>
-      </div>
-    </div>
+    </section>
   );
-}
+});
