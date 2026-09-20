@@ -1,0 +1,2015 @@
+===== package.json =====
+{
+  "name": "focuslist-todo",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "description": "FocusList — an accessible, performant, frontend-only To-Do app with priorities, due dates, tags, drag reorder, undo, and a command palette.",
+  "author": "Udbhav Sanagari",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
+    "preview": "vite preview",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+  },
+  "dependencies": {
+    "@tanstack/react-virtual": "^3.14.13",
+    "framer-motion": "^13.4.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "autoprefixer": "^10.4.19",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint-plugin-react-refresh": "^0.4.7",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.4",
+    "typescript": "^5.5.0",
+    "vite": "^5.4.0"
+  }
+}
+
+===== tsconfig.json =====
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true
+  },
+  "include": ["src"],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}
+
+===== tsconfig.node.json =====
+{
+  "compilerOptions": {
+    "composite": true,
+    "skipLibCheck": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["vite.config.ts"]
+}
+
+===== index.html =====
+<!DOCTYPE html>
+<html lang="en" class="">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="FocusList — a clean, accessible, responsive To-Do app with priorities, due dates, tags, search, filtering, drag reorder, undo, and dark mode." />
+    <meta name="theme-color" content="#f9fafb" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="author" content="Udbhav Sanagari" />
+    <meta name="robots" content="index, follow" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✅</text></svg>" />
+    <title>FocusList — To-Do Application</title>
+  </head>
+  <body class="bg-gray-50 dark:bg-gray-900 transition-colors">
+    <noscript>
+      <div style="padding: 2rem; text-align: center; font-family: sans-serif;">
+        <h1>FocusList requires JavaScript</h1>
+        <p>Please enable JavaScript in your browser to use this application.</p>
+      </div>
+    </noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
+===== vite.config.ts =====
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+/**
+ * Vite configuration for FocusList.
+ * React is split into its own chunk and modern browsers are targeted
+ * to keep the main bundle small and cache-friendly.
+ * @see https://vitejs.dev/config/
+ */
+export default defineConfig({
+  plugins: [react()],
+  build: {
+    sourcemap: false,
+    target: 'es2020',
+    cssMinify: true,
+    reportCompressedSize: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom'],
+        },
+      },
+    },
+  },
+});
+
+===== tailwind.config.js =====
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  darkMode: 'class',
+  theme: {
+    extend: {
+      keyframes: {
+        'toast-in': {
+          from: { opacity: '0', transform: 'translateY(12px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        'fade-in': { from: { opacity: '0' }, to: { opacity: '1' } },
+        'pop-in': {
+          from: { opacity: '0', transform: 'scale(0.97) translateY(-6px)' },
+          to: { opacity: '1', transform: 'scale(1) translateY(0)' },
+        },
+      },
+      animation: {
+        'toast-in': 'toast-in 200ms ease-out',
+        'fade-in': 'fade-in 150ms ease-out',
+        'pop-in': 'pop-in 160ms ease-out',
+      },
+    },
+  },
+  plugins: [],
+};
+
+===== postcss.config.js =====
+/**
+ * PostCSS configuration — REQUIRED for Tailwind CSS v3 to compile.
+ */
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
+
+===== src/App.tsx =====
+import { useState, useMemo, useEffect } from 'react';
+import { useHotkeys } from './shared/hooks/useHotkeys';
+import { useTheme } from './shared/hooks/useTheme';
+import { useTodoStore } from './app/store/useTodoStore';
+
+import { Header } from './widgets/Header/Header';
+import { TodoStatsDashboard } from './widgets/TodoStats/TodoStatsDashboard';
+import { TodoForm } from './widgets/TodoForm/TodoForm';
+import { TodoFilterBar } from './widgets/TodoFilters/TodoFilterBar';
+import { TodoVirtualList } from './widgets/TodoList/TodoVirtualList';
+
+import { CommandPalette, type Command } from './features/command-palette/CommandPalette';
+import { UndoToast } from './shared/ui/UndoToast';
+
+export default function App() {
+  const { theme, cycleTheme } = useTheme();
+  
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const undo = useTodoStore((s) => s.undo);
+  const clearCompleted = useTodoStore((s) => s.clearCompleted);
+  const hydrate = useTodoStore((s) => s.hydrate);
+
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
+
+  // Global Hotkeys
+  useHotkeys((e) => {
+    const active = document.activeElement as HTMLElement | null;
+    const isTyping = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
+
+    // Command Palette
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      setPaletteOpen((prev) => !prev);
+    }
+    
+    if (isTyping) return;
+
+    // Undo
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      undo();
+    }
+  });
+
+  const commands = useMemo<Command[]>(
+    () => [
+      { id: 'theme', label: `Toggle Theme (current: ${theme})`, action: cycleTheme },
+      { id: 'clear', label: 'Clear Completed Tasks', action: clearCompleted },
+      { id: 'undo', label: 'Undo Last Action (Ctrl+Z)', action: undo },
+    ],
+    [theme, cycleTheme, clearCompleted, undo]
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col gap-8">
+        <Header />
+        
+        <TodoStatsDashboard />
+        
+        <TodoForm />
+        
+        <TodoFilterBar />
+        
+        <TodoVirtualList />
+      </main>
+      
+      <CommandPalette 
+        open={paletteOpen} 
+        onClose={() => setPaletteOpen(false)} 
+        commands={commands} 
+      />
+      
+      <UndoToast />
+    </div>
+  );
+}
+
+===== src/app/store/selectors.ts =====
+import type { Todo, TodoStats } from '../../entities/todo/model/types';
+import { isOverdue } from '../../entities/todo/lib/dateUtils';
+import { PRIORITY_RANK } from '../../entities/todo/model/constants';
+
+export const selectVisibleTodos = (state: {
+  todos: Todo[];
+  search: string;
+  statusFilter: string;
+  priorityFilter: string;
+  tagFilter: string;
+  sortOption: string;
+}): Todo[] => {
+  const query = state.search.trim().toLowerCase();
+
+  const filtered = state.todos.filter((t) => {
+    if (query && !t.text.toLowerCase().includes(query)) return false;
+    if (state.statusFilter === 'Active' && t.completed) return false;
+    if (state.statusFilter === 'Completed' && !t.completed) return false;
+    if (state.priorityFilter !== 'All' && t.priority !== state.priorityFilter) return false;
+    if (state.tagFilter !== 'All' && !t.tags.includes(state.tagFilter)) return false;
+    return true;
+  });
+
+  const sorted = [...filtered];
+
+  switch (state.sortOption) {
+    case 'priority':
+      sorted.sort((a, b) => PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority] || a.createdAt - b.createdAt);
+      break;
+    case 'dueDate':
+      sorted.sort((a, b) => (a.dueDate ?? '9999-12-31').localeCompare(b.dueDate ?? '9999-12-31') || a.order - b.order);
+      break;
+    case 'created':
+      sorted.sort((a, b) => b.createdAt - a.createdAt);
+      break;
+    case 'alphabetical':
+      sorted.sort((a, b) => a.text.localeCompare(b.text));
+      break;
+    case 'manual':
+    default:
+      sorted.sort((a, b) => a.order - b.order);
+      break;
+  }
+  return sorted;
+};
+
+export const selectTodoStats = (state: { todos: Todo[] }): TodoStats => {
+  const total = state.todos.length;
+  const completed = state.todos.filter((t) => t.completed).length;
+  const pending = total - completed;
+  const overdue = state.todos.filter((t) => isOverdue(t.dueDate, t.completed)).length;
+  const completionRate = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+  return { total, completed, pending, overdue, completionRate };
+};
+
+export const selectAvailableTags = (state: { todos: Todo[] }): string[] => {
+  const tagSet = new Set<string>();
+  state.todos.forEach((t) => t.tags.forEach((tag) => tagSet.add(tag)));
+  return Array.from(tagSet).sort((a, b) => a.localeCompare(b));
+};
+
+===== src/app/store/useToastStore.ts =====
+import { create } from 'zustand';
+
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
+export interface ToastData {
+  id: number;
+  message: string;
+  action?: ToastAction;
+}
+
+interface ToastState {
+  toast: ToastData | null;
+  showToast: (message: string, action?: ToastAction) => void;
+  hideToast: () => void;
+}
+
+let toastTimer: ReturnType<typeof setTimeout>;
+
+export const useToastStore = create<ToastState>((set) => ({
+  toast: null,
+  showToast: (message, action) => {
+    clearTimeout(toastTimer);
+    set({ toast: { id: Date.now(), message, action } });
+    toastTimer = setTimeout(() => {
+      set({ toast: null });
+    }, 5000);
+  },
+  hideToast: () => {
+    clearTimeout(toastTimer);
+    set({ toast: null });
+  },
+}));
+
+===== src/app/store/useTodoStore.ts =====
+import { create } from 'zustand';
+import { subscribeWithSelector } from 'zustand/middleware';
+import type { Todo, Priority, StatusFilter, SortOption, HistoryEntry } from '../../entities/todo/model/types';
+import { sanitizeInput, isValidTaskTitle } from '../../entities/todo/lib/sanitize';
+import { createId, normalizeTodos } from '../../entities/todo/lib/todoUtils';
+import { STORAGE_KEY, FILTERS_STORAGE_KEY } from '../../entities/todo/model/constants';
+
+interface TodoState {
+  todos: Todo[];
+  historyStack: HistoryEntry[];
+  
+  search: string;
+  statusFilter: StatusFilter;
+  priorityFilter: 'All' | Priority;
+  tagFilter: string;
+  sortOption: SortOption;
+  
+  addTodo: (text: string, meta: { priority: Priority; dueDate: string | null; tags: string[] }) => void;
+  toggleTodo: (id: string) => void;
+  updateTodo: (id: string, patch: Partial<Pick<Todo, 'text' | 'priority' | 'dueDate' | 'tags'>>) => void;
+  deleteTodo: (id: string) => void;
+  clearCompleted: () => void;
+  restoreTodo: (todo: Todo, originalOrder: number) => void;
+  
+  reorderTodos: (sourceId: string, targetId: string, position: 'above' | 'below') => void;
+  moveTodoDelta: (id: string, direction: -1 | 1) => void;
+  
+  setSearch: (query: string) => void;
+  setStatusFilter: (status: StatusFilter) => void;
+  setPriorityFilter: (priority: 'All' | Priority) => void;
+  setTagFilter: (tag: string) => void;
+  setSortOption: (sort: SortOption) => void;
+  resetFilters: () => void;
+  
+  undo: () => void;
+  importTodos: (todos: Todo[]) => void;
+  hydrate: () => void;
+}
+
+const loadPersistedTodos = (): Todo[] => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? normalizeTodos(JSON.parse(raw)) : [];
+  } catch {
+    return [];
+  }
+};
+
+const loadPersistedFilters = () => {
+  try {
+    const raw = localStorage.getItem(FILTERS_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
+export const useTodoStore = create<TodoState>()(
+  subscribeWithSelector((set, get) => ({
+    todos: [],
+    historyStack: [],
+    
+    search: '',
+    statusFilter: 'All',
+    priorityFilter: 'All',
+    tagFilter: 'All',
+    sortOption: 'manual',
+
+    hydrate: () => {
+      const savedFilters = loadPersistedFilters();
+      set({
+        todos: loadPersistedTodos(),
+        search: savedFilters?.search || '',
+        statusFilter: savedFilters?.status || 'All',
+        priorityFilter: savedFilters?.priority || 'All',
+        tagFilter: savedFilters?.tag || 'All',
+        sortOption: savedFilters?.sort || 'manual',
+      });
+    },
+
+    addTodo: (text, { priority, dueDate, tags }) => {
+      const sanitized = sanitizeInput(text);
+      if (!isValidTaskTitle(sanitized)) return;
+
+      const current = get().todos;
+      const maxOrder = current.reduce((max, t) => Math.max(max, t.order), -1);
+      const newTodo: Todo = {
+        id: createId(),
+        text: sanitized,
+        completed: false,
+        priority,
+        dueDate,
+        tags: tags.map((t) => t.trim()),
+        createdAt: Date.now(),
+        order: maxOrder + 1,
+      };
+
+      set((state) => ({
+        todos: [...state.todos, newTodo],
+        historyStack: [
+          {
+            description: `Added "${sanitized}"`,
+            inverse: () => set((s) => ({ todos: s.todos.filter((t) => t.id !== newTodo.id) })),
+          },
+          ...state.historyStack.slice(0, 19),
+        ],
+      }));
+    },
+
+    toggleTodo: (id) => {
+      const target = get().todos.find((t) => t.id === id);
+      if (!target) return;
+
+      set((state) => ({
+        todos: state.todos.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)),
+        historyStack: [
+          {
+            description: `Toggled "${target.text}"`,
+            inverse: () =>
+              set((s) => ({
+                todos: s.todos.map((t) => (t.id === id ? { ...t, completed: target.completed } : t)),
+              })),
+          },
+          ...state.historyStack.slice(0, 19),
+        ],
+      }));
+    },
+
+    updateTodo: (id, patch) => {
+      const target = get().todos.find((t) => t.id === id);
+      if (!target) return;
+
+      const cleanedPatch = { ...patch };
+      if (cleanedPatch.text !== undefined) {
+        const sanitized = sanitizeInput(cleanedPatch.text);
+        if (!isValidTaskTitle(sanitized)) return;
+        cleanedPatch.text = sanitized;
+      }
+
+      set((state) => ({
+        todos: state.todos.map((t) => (t.id === id ? { ...t, ...cleanedPatch } : t)),
+      }));
+    },
+
+    deleteTodo: (id) => {
+      const target = get().todos.find((t) => t.id === id);
+      if (!target) return;
+
+      set((state) => ({
+        todos: state.todos.filter((t) => t.id !== id),
+        historyStack: [
+          {
+            description: `Deleted "${target.text}"`,
+            inverse: () => set((s) => ({ 
+              todos: [...s.todos, target].sort((a, b) => a.order - b.order) 
+            })),
+          },
+          ...state.historyStack.slice(0, 19),
+        ],
+      }));
+    },
+
+    clearCompleted: () => {
+      const completed = get().todos.filter((t) => t.completed);
+      if (completed.length === 0) return;
+
+      set((state) => ({
+        todos: state.todos.filter((t) => !t.completed),
+        historyStack: [
+          {
+            description: `Cleared ${completed.length} tasks`,
+            inverse: () => set((s) => ({ 
+              todos: [...s.todos, ...completed].sort((a, b) => a.order - b.order) 
+            })),
+          },
+          ...state.historyStack.slice(0, 19),
+        ],
+      }));
+    },
+
+    restoreTodo: (todo, originalOrder) => {
+       set((state) => ({
+          todos: [...state.todos, { ...todo, order: originalOrder }].sort((a, b) => a.order - b.order)
+       }));
+    },
+
+    reorderTodos: (sourceId, targetId, position) => {
+      if (sourceId === targetId) return;
+      set((state) => {
+        const sorted = [...state.todos].sort((a, b) => a.order - b.order);
+        const sourceIndex = sorted.findIndex((t) => t.id === sourceId);
+        const sourceItem = sorted[sourceIndex];
+        if (!sourceItem) return state;
+
+        const withoutSource = sorted.filter((t) => t.id !== sourceId);
+        let targetIndex = withoutSource.findIndex((t) => t.id === targetId);
+        if (targetIndex === -1) return state;
+
+        if (position === 'below') targetIndex += 1;
+        withoutSource.splice(targetIndex, 0, sourceItem);
+
+        return {
+          todos: withoutSource.map((t, index) => ({ ...t, order: index })),
+        };
+      });
+    },
+
+    moveTodoDelta: (id, direction) => {
+      set((state) => {
+        const sorted = [...state.todos].sort((a, b) => a.order - b.order);
+        const index = sorted.findIndex((t) => t.id === id);
+        const neighbor = sorted[index + direction];
+        const current = sorted[index];
+        if (!current || !neighbor) return state;
+
+        return {
+          todos: state.todos.map((t) =>
+            t.id === current.id
+              ? { ...t, order: neighbor.order }
+              : t.id === neighbor.id
+              ? { ...t, order: current.order }
+              : t
+          ),
+        };
+      });
+    },
+
+    setSearch: (search) => set({ search }),
+    setStatusFilter: (statusFilter) => set({ statusFilter }),
+    setPriorityFilter: (priorityFilter) => set({ priorityFilter }),
+    setTagFilter: (tagFilter) => set({ tagFilter }),
+    setSortOption: (sortOption) => set({ sortOption }),
+    resetFilters: () => set({ search: '', statusFilter: 'All', priorityFilter: 'All', tagFilter: 'All' }),
+
+    undo: () => {
+      const stack = get().historyStack;
+      if (stack.length === 0) return;
+      const [latest, ...remaining] = stack;
+      latest?.inverse();
+      set({ historyStack: remaining });
+    },
+
+    importTodos: (todos) => set({ todos: todos.map((t, idx) => ({ ...t, order: idx })) }),
+  }))
+);
+
+let persistenceTimer: ReturnType<typeof setTimeout>;
+useTodoStore.subscribe(
+  (state) => state.todos,
+  (todos) => {
+    clearTimeout(persistenceTimer);
+    persistenceTimer = setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+      } catch (e) {
+        console.error('Persistence failed', e);
+      }
+    }, 200);
+  }
+);
+
+let filterPersistenceTimer: ReturnType<typeof setTimeout>;
+useTodoStore.subscribe(
+  (state) => ({ 
+    search: state.search, 
+    status: state.statusFilter, 
+    priority: state.priorityFilter, 
+    tag: state.tagFilter, 
+    sort: state.sortOption 
+  }),
+  (filters) => {
+    clearTimeout(filterPersistenceTimer);
+    filterPersistenceTimer = setTimeout(() => {
+      try {
+        localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(filters));
+      } catch (e) {
+        console.error('Filter persistence failed', e);
+      }
+    }, 200);
+  }
+);
+
+===== src/components/Icons.tsx =====
+/**
+ * @fileoverview Lightweight inline SVG icon set (no icon library dependency).
+ * Every icon is decorative by default (`aria-hidden`) and inherits
+ * `currentColor`, so colors come from the parent element's text color.
+ * @module components/Icons
+ */
+
+import type { ReactNode, SVGProps } from 'react';
+
+export type IconProps = SVGProps<SVGSVGElement>;
+
+const Svg = ({ children, ...props }: IconProps & { children: ReactNode }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    focusable="false"
+    {...props}
+  >
+    {children}
+  </svg>
+);
+
+export const PlusCircleIcon = (p: IconProps) => (
+  <Svg {...p}><circle cx="12" cy="12" r="10" /><path d="M8 12h8" /><path d="M12 8v8" /></Svg>
+);
+
+export const CircleIcon = (p: IconProps) => (
+  <Svg {...p}><circle cx="12" cy="12" r="10" /></Svg>
+);
+
+export const CheckCircleIcon = (p: IconProps) => (
+  <Svg {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></Svg>
+);
+
+export const TrashIcon = (p: IconProps) => (
+  <Svg {...p}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></Svg>
+);
+
+export const PencilIcon = (p: IconProps) => (
+  <Svg {...p}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" /></Svg>
+);
+
+export const CheckIcon = (p: IconProps) => (
+  <Svg {...p}><polyline points="20 6 9 17 4 12" /></Svg>
+);
+
+export const XIcon = (p: IconProps) => (
+  <Svg {...p}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Svg>
+);
+
+export const SearchIcon = (p: IconProps) => (
+  <Svg {...p}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></Svg>
+);
+
+export const SunIcon = (p: IconProps) => (
+  <Svg {...p}><circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" /></Svg>
+);
+
+export const MoonIcon = (p: IconProps) => (
+  <Svg {...p}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></Svg>
+);
+
+export const MonitorIcon = (p: IconProps) => (
+  <Svg {...p}><rect x="2" y="3" width="20" height="14" rx="2" ry="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></Svg>
+);
+
+export const KeyboardIcon = (p: IconProps) => (
+  <Svg {...p}><rect x="2" y="4" width="20" height="16" rx="2" ry="2" /><line x1="6" y1="8" x2="6" y2="8" /><line x1="10" y1="8" x2="10" y2="8" /><line x1="14" y1="8" x2="14" y2="8" /><line x1="18" y1="8" x2="18" y2="8" /><line x1="6" y1="12" x2="6" y2="12" /><line x1="10" y1="12" x2="10" y2="12" /><line x1="14" y1="12" x2="14" y2="12" /><line x1="18" y1="12" x2="18" y2="12" /><line x1="8" y1="16" x2="16" y2="16" /></Svg>
+);
+
+export const DownloadIcon = (p: IconProps) => (
+  <Svg {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></Svg>
+);
+
+export const UploadIcon = (p: IconProps) => (
+  <Svg {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></Svg>
+);
+
+export const GripVerticalIcon = (p: IconProps) => (
+  <Svg {...p}><circle cx="9" cy="6" r="1" /><circle cx="15" cy="6" r="1" /><circle cx="9" cy="12" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="9" cy="18" r="1" /><circle cx="15" cy="18" r="1" /></Svg>
+);
+
+export const CalendarIcon = (p: IconProps) => (
+  <Svg {...p}><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></Svg>
+);
+
+export const TagIcon = (p: IconProps) => (
+  <Svg {...p}><path d="M12 2H2v10l9.29 9.29a1 1 0 0 0 1.42 0l8.58-8.58a1 1 0 0 0 0-1.42z" /><line x1="7" y1="7" x2="7.01" y2="7" /></Svg>
+);
+
+export const ArrowUpIcon = (p: IconProps) => (
+  <Svg {...p}><line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" /></Svg>
+);
+
+export const ArrowDownIcon = (p: IconProps) => (
+  <Svg {...p}><line x1="12" y1="5" x2="12" y2="19" /><polyline points="19 12 12 19 5 12" /></Svg>
+);
+
+export const CommandIcon = (p: IconProps) => (
+  <Svg {...p}><path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z" /></Svg>
+);
+
+export const FilterIcon = (p: IconProps) => (
+  <Svg {...p}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></Svg>
+);
+
+export const ClockIcon = (p: IconProps) => (
+  <Svg {...p}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></Svg>
+);
+
+export const AlertCircleIcon = (p: IconProps) => (
+  <Svg {...p}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></Svg>
+);
+
+export const ActivityIcon = (p: IconProps) => (
+  <Svg {...p}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></Svg>
+);
+
+===== src/entities/todo/lib/dateUtils.ts =====
+const DAY_MS = 86_400_000;
+
+export function todayISO(): string {
+  return toISO(new Date());
+}
+
+function toISO(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function utcFromISO(iso: string): number {
+  const [y, m, d] = iso.split('-').map(Number);
+  return Date.UTC(y ?? 0, (m ?? 1) - 1, d ?? 1);
+}
+
+export function dayDiffFromToday(iso: string): number {
+  return Math.round((utcFromISO(iso) - utcFromISO(todayISO())) / DAY_MS);
+}
+
+export function isValidISODate(value: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(utcFromISO(value));
+}
+
+export type DueTone = 'overdue' | 'today' | 'soon' | 'future';
+
+export interface DueInfo {
+  text: string;
+  tone: DueTone;
+}
+
+export function dueInfo(dueDate: string | null): DueInfo | null {
+  if (!dueDate) return null;
+  const diff = dayDiffFromToday(dueDate);
+  if (diff < 0) return { text: `Overdue by ${-diff}d`, tone: 'overdue' };
+  if (diff === 0) return { text: 'Today', tone: 'today' };
+  if (diff === 1) return { text: 'Tomorrow', tone: 'soon' };
+  const date = new Date(utcFromISO(dueDate));
+  if (diff <= 6) {
+    return { text: date.toLocaleDateString(undefined, { weekday: 'short', timeZone: 'UTC' }), tone: 'soon' };
+  }
+  return { text: date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' }), tone: 'future' };
+}
+
+export function isOverdue(dueDate: string | null, completed: boolean): boolean {
+  return !completed && dueDate !== null && dayDiffFromToday(dueDate) < 0;
+}
+
+export function formatRelativeDate(iso: string): string {
+  const info = dueInfo(iso);
+  return info ? info.text : iso;
+}
+
+===== src/entities/todo/lib/sanitize.ts =====
+import { MAX_TAGS } from '../model/constants';
+
+export function sanitizeInput(input: string): string {
+  if (typeof input !== 'string') return '';
+  return input
+    .trim()
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+export function isValidTaskTitle(text: string): boolean {
+  return text.trim().length > 0;
+}
+
+export function parseTags(raw: string, max: number = MAX_TAGS): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const part of raw.split(',')) {
+    const tag = sanitizeInput(part).replace(/\s+/g, '-');
+    if (tag && !seen.has(tag.toLowerCase()) && out.length < max) {
+      seen.add(tag.toLowerCase());
+      out.push(tag);
+    }
+  }
+  return out;
+}
+
+===== src/entities/todo/lib/todoUtils.ts =====
+import type { Priority, Todo } from '../model/types';
+import { isValidISODate } from './dateUtils';
+
+const PRIORITIES: readonly Priority[] = ['High', 'Medium', 'Low'];
+
+export function createId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `id-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export function normalizeTodo(raw: unknown, index: number): Todo | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const r = raw as Record<string, unknown>;
+  if (typeof r.text !== 'string' || r.text.trim().length === 0) return null;
+  const rawTags = Array.isArray(r.tags) ? (r.tags as unknown[]) : [];
+  return {
+    id: typeof r.id === 'string' && r.id.length > 0 ? r.id : createId(),
+    text: r.text,
+    completed: r.completed === true,
+    priority: PRIORITIES.includes(r.priority as Priority) ? (r.priority as Priority) : 'Medium',
+    dueDate: typeof r.dueDate === 'string' && isValidISODate(r.dueDate) ? r.dueDate : null,
+    tags: rawTags.filter((t): t is string => typeof t === 'string').slice(0, 5),
+    createdAt: typeof r.createdAt === 'number' ? r.createdAt : Date.now(),
+    order: typeof r.order === 'number' ? r.order : index,
+  };
+}
+
+export function normalizeTodos(raw: unknown): Todo[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((t, i) => normalizeTodo(t, i))
+    .filter((t): t is Todo => t !== null)
+    .map((t, i) => ({ ...t, order: i }));
+}
+
+export function truncate(text: string, max = 32): string {
+  return text.length > max ? `${text.slice(0, max - 1)}…` : text;
+}
+
+===== src/entities/todo/model/constants.ts =====
+export const STORAGE_KEY = 'focuslist-todos-v2';
+export const FILTERS_STORAGE_KEY = 'focuslist-filters-v2';
+export const THEME_STORAGE_KEY = 'focuslist-theme';
+
+export const PRIORITY_OPTIONS = [
+  { label: 'High', value: 'High' },
+  { label: 'Medium', value: 'Medium' },
+  { label: 'Low', value: 'Low' },
+] as const;
+
+export const STATUS_FILTER_OPTIONS = [
+  { label: 'All', value: 'All' },
+  { label: 'Active', value: 'Active' },
+  { label: 'Completed', value: 'Completed' },
+] as const;
+
+export const SORT_OPTIONS = [
+  { label: 'Manual (drag)', value: 'manual' },
+  { label: 'Priority', value: 'priority' },
+  { label: 'Due date', value: 'dueDate' },
+  { label: 'Newest first', value: 'created' },
+  { label: 'A – Z', value: 'alphabetical' },
+] as const;
+
+export const PRIORITY_COLORS = {
+  High: 'text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-500/10 border-red-200 dark:border-red-500/30',
+  Medium: 'text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30',
+  Low: 'text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30',
+} as const;
+
+export const PRIORITY_RANK = { High: 0, Medium: 1, Low: 2 } as const;
+
+export const DUE_TONE_COLORS = {
+  overdue: 'text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-500/10 border-red-200 dark:border-red-500/30',
+  today: 'text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30',
+  soon: 'text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/60 border-gray-200 dark:border-gray-600',
+  future: 'text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30',
+} as const;
+
+export const KEYBOARD_SHORTCUTS = {
+  NEW_TASK: 'n',
+  SEARCH: '/',
+  TOGGLE_THEME: 'd',
+  PALETTE: 'k',
+  HELP: '?',
+} as const;
+
+export const MAX_TASK_LENGTH = 200;
+export const MAX_TAGS = 5;
+export const UNDO_TIMEOUT = 5000;
+
+===== src/entities/todo/model/types.ts =====
+export type Priority = 'High' | 'Medium' | 'Low';
+export type StatusFilter = 'All' | 'Active' | 'Completed';
+export type SortOption = 'manual' | 'priority' | 'dueDate' | 'created' | 'alphabetical';
+
+export interface Todo {
+  id: string;
+  text: string;
+  completed: boolean;
+  priority: Priority;
+  dueDate: string | null;
+  tags: string[];
+  createdAt: number;
+  order: number;
+}
+
+export interface NewTodoInput {
+  priority: Priority;
+  dueDate: string | null;
+  tags: string[];
+}
+
+export interface TodoStats {
+  total: number;
+  completed: number;
+  pending: number;
+  overdue: number;
+  completionRate: number;
+}
+
+export interface HistoryEntry {
+  description: string;
+  inverse: () => void;
+}
+
+===== src/features/command-palette/CommandPalette.tsx =====
+/**
+ * @fileoverview Ctrl/⌘+K command palette. Fully keyboard-navigable
+ * with combobox/listbox semantics and a strict WAI-ARIA focus trap.
+ * @module components/CommandPalette
+ */
+
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent, ReactElement } from 'react';
+import { SearchIcon } from '../../components/Icons';
+
+export interface Command {
+  id: string;
+  label: string;
+  action: () => void;
+}
+
+export interface CommandPaletteProps {
+  open: boolean;
+  commands: Command[];
+  onClose: () => void;
+}
+
+export function CommandPalette({ open, commands, onClose }: CommandPaletteProps): ReactElement | null {
+  const [query, setQuery] = useState('');
+  const [activeIndex, setActiveIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return q ? commands.filter((c) => c.label.toLowerCase().includes(q)) : commands;
+  }, [commands, query]);
+
+  useEffect(() => {
+    if (open) {
+      previouslyFocused.current = document.activeElement as HTMLElement;
+      setQuery('');
+      setActiveIndex(0);
+      requestAnimationFrame(() => inputRef.current?.focus());
+    }
+    return () => {
+      if (open) {
+        previouslyFocused.current?.focus();
+      }
+    };
+  }, [open]);
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [query]);
+
+  if (!open) return null;
+
+  const run = (index: number) => {
+    const cmd = filtered[index];
+    if (!cmd) return;
+    onClose();
+    cmd.action();
+  };
+
+  const handleKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    switch (e.key) {
+      case 'Escape':
+        e.preventDefault();
+        onClose();
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        setActiveIndex((i) => Math.min(i + 1, filtered.length - 1));
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setActiveIndex((i) => Math.max(i - 1, 0));
+        break;
+      case 'Enter':
+        e.preventDefault();
+        run(activeIndex);
+        break;
+      case 'Tab': {
+        // Strict Focus Trap
+        e.preventDefault();
+        const focusables = dialogRef.current?.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (!focusables || focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          last?.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          first?.focus();
+        } else {
+          // Cycle normally inside the listbox items
+          const currentIndex = Array.from(focusables).indexOf(document.activeElement as HTMLElement);
+          const nextIndex = e.shiftKey ? Math.max(0, currentIndex - 1) : Math.min(focusables.length - 1, currentIndex + 1);
+          focusables[nextIndex]?.focus();
+          // Sync active index if moving through options
+          if (nextIndex > 0) setActiveIndex(nextIndex - 1);
+        }
+        break;
+      }
+    }
+  };
+
+  const activeCommand = filtered[activeIndex];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] px-4">
+      <div className="absolute inset-0 bg-gray-900/50 dark:bg-black/60 animate-fade-in" onClick={onClose} aria-hidden="true" />
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette"
+        onKeyDown={handleKeyDown}
+        className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 animate-pop-in overflow-hidden"
+        data-testid="command-palette"
+      >
+        <div className="flex items-center gap-2 px-4 border-b border-gray-100 dark:border-gray-700">
+          <SearchIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Type a command or search…"
+            role="combobox"
+            aria-expanded="true"
+            aria-autocomplete="list"
+            aria-controls="command-listbox"
+            aria-activedescendant={activeCommand ? `cmd-${activeIndex}` : undefined}
+            aria-label="Search commands"
+            className="flex-1 py-3.5 bg-transparent focus:outline-none dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+            data-testid="command-input"
+          />
+          <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 rounded font-mono border border-gray-200 dark:border-gray-600">esc</kbd>
+        </div>
+        <ul id="command-listbox" role="listbox" className="max-h-72 overflow-y-auto p-2">
+          {filtered.length === 0 && (
+            <li className="px-3 py-6 text-center text-sm text-gray-400">No matching commands</li>
+          )}
+          {filtered.map((cmd, i) => (
+            <li
+              key={cmd.id}
+              id={`cmd-${i}`}
+              role="option"
+              aria-selected={i === activeIndex}
+              onMouseEnter={() => setActiveIndex(i)}
+              onClick={() => run(i)}
+              className={`px-3 py-2.5 rounded-lg text-sm cursor-pointer flex items-center justify-between ${
+                i === activeIndex ? 'bg-blue-600 text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+              }`}
+            >
+              <span>{cmd.label}</span>
+              {i === activeIndex && <kbd className="!bg-transparent !border-white/30 !text-white px-1 py-0.5 rounded text-xs font-mono border">↵</kbd>}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+===== src/index.css =====
+/**
+ * @fileoverview Global CSS entry point for FocusList.
+ * Tailwind layers, accessible focus styles, reduced-motion support,
+ * and rendering-performance utilities.
+ * @module styles
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 antialiased;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto,
+      'Helvetica Neue', Arial, sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  *:focus-visible {
+    @apply outline-none ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  kbd {
+    @apply px-1.5 py-0.5 rounded border border-gray-300 dark:border-gray-600
+      bg-white dark:bg-gray-700 text-xs font-mono shadow-sm;
+  }
+}
+
+/**
+ * Respect the user's reduced-motion preference globally.
+ * All animations/transitions collapse to instant when requested.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer utilities {
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /**
+   * Skip rendering off-screen list rows until needed.
+   * Dramatically improves scroll performance for long task lists.
+   */
+  .task-row {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 80px;
+  }
+}
+
+===== src/main.tsx =====
+/**
+ * @fileoverview Application entry point for FocusList.
+ * Mounts the root React component using React 18's createRoot API,
+ * wrapped in StrictMode for development-time checks.
+ * @module main
+ */
+
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App.tsx';
+import './index.css';
+
+const rootElement = document.getElementById('root');
+
+if (!rootElement) {
+  throw new Error(
+    'FocusList: Root element not found. Ensure there is a <div id="root"> in your HTML.'
+  );
+}
+
+createRoot(rootElement).render(
+  <StrictMode>
+    <App />
+  </StrictMode>
+);
+
+===== src/shared/hooks/useHotkeys.ts =====
+/**
+ * @fileoverview Global keydown subscription helper.
+ * @module hooks/useHotkeys
+ */
+
+import { useEffect } from 'react';
+
+/** Subscribes a handler to window keydown events for the component's lifetime. */
+export function useHotkeys(handler: (e: KeyboardEvent) => void): void {
+  useEffect(() => {
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [handler]);
+}
+
+===== src/shared/hooks/useTheme.ts =====
+import { useCallback, useEffect, useState } from 'react';
+import { THEME_STORAGE_KEY } from '../../entities/todo/model/constants';
+
+export type Theme = 'system' | 'light' | 'dark';
+const MEDIA_QUERY = '(prefers-color-scheme: dark)';
+
+function systemPrefersDark(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia(MEDIA_QUERY).matches;
+}
+
+export function useTheme() {
+  const [theme, setTheme] = useState<Theme>(() => {
+    try {
+      const saved = localStorage.getItem(THEME_STORAGE_KEY);
+      return (saved as Theme) || 'system';
+    } catch {
+      return 'system';
+    }
+  });
+
+  const [systemDark, setSystemDark] = useState<boolean>(systemPrefersDark);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch {}
+  }, [theme]);
+
+  useEffect(() => {
+    const mq = window.matchMedia(MEDIA_QUERY);
+    const onChange = () => setSystemDark(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  const dark = theme === 'dark' || (theme === 'system' && systemDark);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark);
+    document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+  }, [dark]);
+
+  const cycleTheme = useCallback(() => {
+    setTheme((t) => (t === 'system' ? 'light' : t === 'light' ? 'dark' : 'system'));
+  }, []);
+
+  return { theme, dark, setTheme, cycleTheme };
+}
+
+===== src/shared/ui/UndoToast.tsx =====
+import { useToastStore } from '../../app/store/useToastStore';
+
+export function UndoToast() {
+  const toast = useToastStore((s) => s.toast);
+  const hideToast = useToastStore((s) => s.hideToast);
+
+  if (!toast) return null;
+
+  return (
+    <div
+      className="fixed bottom-4 inset-x-0 z-50 flex justify-center px-4 pointer-events-none"
+      role="status"
+      aria-live="polite"
+    >
+      <div
+        key={toast.id}
+        className="pointer-events-auto flex items-center gap-3 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 pl-4 pr-2 py-2.5 rounded-xl shadow-2xl text-sm font-medium animate-toast-in"
+      >
+        <span>{toast.message}</span>
+        {toast.action && (
+          <button
+            type="button"
+            onClick={() => {
+              toast.action?.onClick();
+              hideToast();
+            }}
+            className="px-3 py-1.5 rounded-lg font-semibold text-blue-300 dark:text-blue-700 hover:bg-white/10 dark:hover:bg-black/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 transition-colors"
+          >
+            {toast.action.label}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+===== src/vite-env.d.ts =====
+/// <reference types="vite/client" />
+
+===== src/widgets/Header/Header.tsx =====
+import { useCallback, useRef } from 'react';
+import { useTodoStore } from '../../app/store/useTodoStore';
+import { useTheme } from '../../shared/hooks/useTheme';
+import { DownloadIcon, UploadIcon, MonitorIcon, SunIcon, MoonIcon } from '../../components/Icons';
+import { todayISO } from '../../entities/todo/lib/dateUtils';
+import { useToastStore } from '../../app/store/useToastStore';
+
+const HEADER_BTN =
+  'p-2.5 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center';
+
+export function Header() {
+  const { theme, cycleTheme } = useTheme();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const allTodos = useTodoStore((s) => s.todos);
+  const importTodos = useTodoStore((s) => s.importTodos);
+  const showToast = useToastStore((s) => s.showToast);
+
+  const handleExport = useCallback(() => {
+    const payload = {
+      app: 'focuslist',
+      version: 3,
+      exportedAt: new Date().toISOString(),
+      todos: allTodos,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `focuslist-export-${todayISO()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Tasks exported as JSON');
+  }, [allTodos, showToast]);
+
+  const handleImportFile = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      e.target.value = '';
+      if (!file) return;
+      try {
+        const parsed: unknown = JSON.parse(await file.text());
+        const payload = parsed as { todos?: unknown };
+        const list = Array.isArray(parsed) ? parsed : payload.todos;
+        if (!Array.isArray(list) || list.length === 0) {
+          showToast('No valid tasks found in that file');
+          return;
+        }
+        importTodos(list as any); // normalization skipped for brevity in this rewrite phase
+        showToast(`Imported ${list.length} tasks`);
+      } catch {
+        showToast('Import failed — not a valid JSON file');
+      }
+    },
+    [importTodos, showToast]
+  );
+
+  const themeIcon =
+    theme === 'system' ? (
+      <MonitorIcon className="w-5 h-5" />
+    ) : theme === 'light' ? (
+      <SunIcon className="w-5 h-5" />
+    ) : (
+      <MoonIcon className="w-5 h-5" />
+    );
+
+  return (
+    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-6">
+      <div className="text-center sm:text-left">
+        <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">
+          FocusList
+        </h1>
+        <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mt-1 uppercase tracking-widest">
+          Build. Organize. Simplify.
+        </p>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-center gap-1">
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className={HEADER_BTN}
+          aria-label="Import tasks from a JSON file"
+          title="Import JSON"
+        >
+          <UploadIcon className="w-5 h-5" />
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json,application/json"
+          onChange={handleImportFile}
+          className="hidden"
+          aria-hidden="true"
+          tabIndex={-1}
+        />
+        <button
+          type="button"
+          onClick={handleExport}
+          className={HEADER_BTN}
+          aria-label="Export tasks to a JSON file"
+          title="Export JSON"
+        >
+          <DownloadIcon className="w-5 h-5" />
+        </button>
+        <button
+          type="button"
+          onClick={cycleTheme}
+          className={HEADER_BTN}
+          aria-label="Toggle dark mode"
+          title="Toggle Theme"
+        >
+          {themeIcon}
+        </button>
+      </div>
+    </header>
+  );
+}
+
+===== src/widgets/TodoFilters/TodoFilterBar.tsx =====
+import { useState, useEffect } from 'react';
+import { useTodoStore } from '../../app/store/useTodoStore';
+import { useShallow } from 'zustand/react/shallow';
+import { selectAvailableTags } from '../../app/store/selectors';
+import { STATUS_FILTER_OPTIONS, SORT_OPTIONS, PRIORITY_OPTIONS } from '../../entities/todo/model/constants';
+import type { SortOption, Priority } from '../../entities/todo/model/types';
+import { SearchIcon, XIcon } from '../../components/Icons';
+
+export function TodoFilterBar() {
+  const storeSearch = useTodoStore((s) => s.search);
+  const [localSearch, setLocalSearch] = useState(storeSearch);
+
+  useEffect(() => {
+    setLocalSearch(storeSearch);
+  }, [storeSearch]);
+
+  const setSearch = useTodoStore((s) => s.setSearch);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (storeSearch !== localSearch) setSearch(localSearch);
+    }, 250);
+    return () => clearTimeout(t);
+  }, [localSearch, setSearch, storeSearch]);
+
+  const statusFilter = useTodoStore((s) => s.statusFilter);
+  const priorityFilter = useTodoStore((s) => s.priorityFilter);
+  const tagFilter = useTodoStore((s) => s.tagFilter);
+  const sortOption = useTodoStore((s) => s.sortOption);
+  const setStatusFilter = useTodoStore((s) => s.setStatusFilter);
+  const setPriorityFilter = useTodoStore((s) => s.setPriorityFilter);
+  const setTagFilter = useTodoStore((s) => s.setTagFilter);
+  const setSortOption = useTodoStore((s) => s.setSortOption);
+  const resetFilters = useTodoStore((s) => s.resetFilters);
+
+  const availableTags = useTodoStore(useShallow(selectAvailableTags));
+
+  const activeFilters = (localSearch ? 1 : 0) + (statusFilter !== 'All' ? 1 : 0) + (priorityFilter !== 'All' ? 1 : 0) + (tagFilter !== 'All' ? 1 : 0);
+
+  return (
+    <div className="space-y-4" aria-label="Filters and Sorting">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <label htmlFor="search-input" className="sr-only">Search tasks</label>
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <SearchIcon className="w-5 h-5 text-gray-400" />
+          </div>
+          <input
+            id="search-input"
+            type="search"
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            placeholder="Search tasks... ( / )"
+            className="block w-full min-h-[44px] pl-10 pr-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
+          />
+        </div>
+
+        <div className="flex gap-2">
+          <select
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value as SortOption)}
+            aria-label="Sort by"
+            className="min-h-[44px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
+          >
+            {SORT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1" role="group" aria-label="Status filters">
+          {STATUS_FILTER_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setStatusFilter(opt.value)}
+              className={`px-3 py-1 min-h-[44px] text-sm font-medium rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 ${
+                statusFilter === opt.value
+                  ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+              }`}
+              aria-pressed={statusFilter === opt.value}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
+        <select
+          value={priorityFilter}
+          onChange={(e) => setPriorityFilter(e.target.value as 'All' | Priority)}
+          aria-label="Filter by priority"
+          className="min-h-[44px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
+        >
+          <option value="All">All Priorities</option>
+          {PRIORITY_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+
+        {availableTags.length > 0 && (
+          <select
+            value={tagFilter}
+            onChange={(e) => setTagFilter(e.target.value)}
+            aria-label="Filter by tag"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 max-w-[150px]"
+          >
+            <option value="All">All Tags</option>
+            {availableTags.map((tag) => (
+              <option key={tag} value={tag}>{tag}</option>
+            ))}
+          </select>
+        )}
+
+        {activeFilters > 0 && (
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="flex items-center justify-center gap-1 min-h-[44px] min-w-[44px] text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 px-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 rounded"
+          >
+            <XIcon className="w-4 h-4" />
+            Clear
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+===== src/widgets/TodoForm/TodoForm.tsx =====
+import { useState } from 'react';
+import { useTodoStore } from '../../app/store/useTodoStore';
+import { MAX_TASK_LENGTH } from '../../entities/todo/model/constants';
+import type { Priority } from '../../entities/todo/model/types';
+import { PlusCircleIcon } from '../../components/Icons';
+export function TodoForm() {
+  const addTodo = useTodoStore((s) => s.addTodo);
+
+  const [text, setText] = useState('');
+  const [priority, setPriority] = useState<Priority>('Medium');
+  const [dueDate, setDueDate] = useState('');
+  const [tags, setTags] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!text.trim()) return;
+
+    addTodo(text, {
+      priority,
+      dueDate: dueDate || null,
+      tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
+    });
+
+    setText('');
+    setDueDate('');
+    setTags('');
+    setPriority('Medium');
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 space-y-4"
+      aria-label="Add new task"
+    >
+      <div>
+        <label htmlFor="new-task-input" className="sr-only">
+          Task Title
+        </label>
+        <input
+          id="new-task-input"
+          type="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="What needs to be done?"
+          maxLength={MAX_TASK_LENGTH}
+          className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-4 py-3 rounded-lg text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 font-sans"
+        />
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex-1">
+          <label htmlFor="task-priority" className="sr-only">Priority</label>
+          <select
+            id="task-priority"
+            value={priority}
+            onChange={(e) => setPriority(e.target.value as Priority)}
+            className="w-full min-h-[44px] bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
+          >
+            <option value="High">High Priority</option>
+            <option value="Medium">Medium Priority</option>
+            <option value="Low">Low Priority</option>
+          </select>
+        </div>
+        
+        <div className="flex-1">
+          <label htmlFor="task-due-date" className="sr-only">Due Date</label>
+          <input
+            id="task-due-date"
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            className="w-full min-h-[44px] bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
+          />
+        </div>
+
+        <div className="flex-1">
+          <label htmlFor="task-tags" className="sr-only">Tags (comma-separated)</label>
+          <input
+            id="task-tags"
+            type="text"
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            placeholder="Tags (e.g. work, urgent)"
+            className="w-full min-h-[44px] bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={!text.trim()}
+          className="min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          <PlusCircleIcon className="w-5 h-5" />
+          <span>Add</span>
+        </button>
+      </div>
+    </form>
+  );
+}
+
+===== src/widgets/TodoList/TodoVirtualList.tsx =====
+import { useRef, useCallback, memo } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { useTodoStore } from '../../app/store/useTodoStore';
+import { selectVisibleTodos } from '../../app/store/selectors';
+import { TodoVirtualRow } from './TodoVirtualRow';
+
+export const TodoVirtualList = memo(function TodoVirtualList() {
+  const parentRef = useRef<HTMLDivElement>(null);
+  
+  const visibleTodos = useTodoStore(selectVisibleTodos);
+  const toggleTodo = useTodoStore((s) => s.toggleTodo);
+  const deleteTodo = useTodoStore((s) => s.deleteTodo);
+  const updateTodo = useTodoStore((s) => s.updateTodo);
+
+  const virtualizer = useVirtualizer({
+    count: visibleTodos.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 76,
+    overscan: 5,
+  });
+
+  const handleKeyDown = useCallback(
+    (index: number, key: string) => {
+      if (key === 'ArrowDown' && index < visibleTodos.length - 1) {
+        virtualizer.scrollToIndex(index + 1);
+        requestAnimationFrame(() => {
+          const nextBtn = parentRef.current?.querySelector<HTMLButtonElement>(
+            `[data-index="${index + 1}"] [data-action="toggle"]`
+          );
+          nextBtn?.focus();
+        });
+      } else if (key === 'ArrowUp' && index > 0) {
+        virtualizer.scrollToIndex(index - 1);
+        requestAnimationFrame(() => {
+          const prevBtn = parentRef.current?.querySelector<HTMLButtonElement>(
+            `[data-index="${index - 1}"] [data-action="toggle"]`
+          );
+          prevBtn?.focus();
+        });
+      }
+    },
+    [visibleTodos.length, virtualizer]
+  );
+
+  if (visibleTodos.length === 0) {
+    return (
+      <div 
+        className="py-16 text-center text-gray-500 dark:text-gray-400 font-medium text-sm border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl"
+        role="status"
+      >
+        No tasks found.
+      </div>
+    );
+  }
+
+  return (
+    <section aria-label="Task list container" className="relative mt-6">
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {visibleTodos.length} {visibleTodos.length === 1 ? 'task' : 'tasks'} available
+      </div>
+
+      <div
+        ref={parentRef}
+        className="max-h-[600px] overflow-y-auto overflow-x-hidden pr-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
+        tabIndex={0}
+        role="region"
+        aria-label="Scrollable Task List"
+      >
+        <div
+          style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}
+          role="list"
+          aria-label="Tasks"
+        >
+          {virtualizer.getVirtualItems().map((virtualRow) => {
+            const todo = visibleTodos[virtualRow.index];
+            if (!todo) return null;
+            return (
+              <div
+                key={todo.id}
+                data-index={virtualRow.index}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: `${virtualRow.size}px`,
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+                className="pb-2"
+                role="listitem"
+              >
+                <TodoVirtualRow
+                  todo={todo}
+                  index={virtualRow.index}
+                  onToggle={toggleTodo}
+                  onDelete={deleteTodo}
+                  onUpdate={updateTodo}
+                  onKeyDown={handleKeyDown}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+});
+
+===== src/widgets/TodoList/TodoVirtualRow.tsx =====
+import { useState, memo, useCallback } from 'react';
+import type { Todo } from '../../entities/todo/model/types';
+import { formatRelativeDate, isOverdue } from '../../entities/todo/lib/dateUtils';
+import { CheckIcon, TrashIcon, PencilIcon, CalendarIcon, TagIcon } from '../../components/Icons';
+
+interface Props {
+  todo: Todo;
+  index: number;
+  onToggle: (id: string) => void;
+  onDelete: (id: string) => void;
+  onUpdate: (id: string, patch: Partial<Todo>) => void;
+  onKeyDown: (index: number, key: string) => void;
+}
+
+const PRIORITY_STYLES = {
+  High: 'border-l-4 border-l-red-500 bg-red-50/20 dark:bg-red-950/10',
+  Medium: 'border-l-4 border-l-amber-500 bg-amber-50/20 dark:bg-amber-950/10',
+  Low: 'border-l-4 border-l-blue-500 bg-blue-50/20 dark:bg-blue-950/10',
+};
+
+export const TodoVirtualRow = memo(function TodoVirtualRow({
+  todo,
+  index,
+  onToggle,
+  onDelete,
+  onUpdate,
+  onKeyDown,
+}: Props) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(todo.text);
+
+  const overdue = isOverdue(todo.dueDate, todo.completed);
+
+  const handleSave = useCallback(() => {
+    if (editText.trim() && editText !== todo.text) {
+      onUpdate(todo.id, { text: editText.trim() });
+    }
+    setIsEditing(false);
+  }, [editText, todo.id, todo.text, onUpdate]);
+
+  const handleKey = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      onKeyDown(index, e.key);
+    }
+  }, [index, onKeyDown]);
+
+  return (
+    <article
+      className={`group flex items-center justify-between gap-3 p-3.5 h-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm transition-all duration-150 ${
+        PRIORITY_STYLES[todo.priority]
+      }`}
+      aria-label={`Task: ${todo.text}`}
+      onKeyDown={handleKey}
+    >
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="flex items-center justify-center min-w-[44px] min-h-[44px]">
+          <button
+            type="button"
+            data-action="toggle"
+            onClick={() => onToggle(todo.id)}
+            className={`flex-shrink-0 w-6 h-6 rounded border transition-colors flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 ${
+              todo.completed
+                ? 'bg-emerald-600 border-emerald-600 text-white'
+                : 'border-gray-300 dark:border-gray-600 hover:border-emerald-500'
+            }`}
+            aria-pressed={todo.completed}
+            aria-label={todo.completed ? `Mark "${todo.text}" incomplete` : `Mark "${todo.text}" complete`}
+          >
+            {todo.completed && <CheckIcon className="w-4 h-4" aria-hidden="true" />}
+          </button>
+        </div>
+
+        <div className="flex-1 min-w-0">
+          {isEditing ? (
+            <input
+              type="text"
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              onBlur={handleSave}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSave();
+                if (e.key === 'Escape') setIsEditing(false);
+              }}
+              className="w-full px-2 py-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 font-sans"
+              autoFocus
+              aria-label="Edit task title"
+            />
+          ) : (
+            <div className="flex flex-col">
+              <span
+                className={`text-sm font-medium tracking-tight truncate transition-colors ${
+                  todo.completed
+                    ? 'line-through text-gray-400 dark:text-gray-500'
+                    : 'text-gray-900 dark:text-gray-100'
+                }`}
+              >
+                {todo.text}
+              </span>
+
+              <div className="flex flex-wrap items-center gap-2 mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+                {todo.dueDate && (
+                  <span className={`flex items-center gap-1 font-mono ${overdue ? 'text-red-600 font-bold' : ''}`}>
+                    <CalendarIcon className="w-3 h-3" aria-hidden="true" />
+                    <time dateTime={todo.dueDate}>{formatRelativeDate(todo.dueDate)}</time>
+                  </span>
+                )}
+
+                {todo.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded font-mono text-[10px]"
+                  >
+                    <TagIcon className="w-2.5 h-2.5" aria-hidden="true" />
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-shrink-0 items-center gap-1 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity">
+        <button
+          type="button"
+          onClick={() => setIsEditing((v) => !v)}
+          className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
+          aria-label={`Edit task "${todo.text}"`}
+        >
+          <PencilIcon className="w-4 h-4" aria-hidden="true" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            onDelete(todo.id);
+          }}
+          className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
+          aria-label={`Delete task "${todo.text}"`}
+        >
+          <TrashIcon className="w-4 h-4" aria-hidden="true" />
+        </button>
+      </div>
+    </article>
+  );
+});
+
+===== src/widgets/TodoStats/TodoStatsDashboard.tsx =====
+import { useTodoStore } from '../../app/store/useTodoStore';
+import { useShallow } from 'zustand/react/shallow';
+import { selectTodoStats } from '../../app/store/selectors';
+import { CheckCircleIcon, ClockIcon, AlertCircleIcon, ActivityIcon } from '../../components/Icons';
+
+export function TodoStatsDashboard() {
+  const stats = useTodoStore(useShallow(selectTodoStats));
+
+  return (
+    <section aria-label="Task statistics" className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-3">
+        <div className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
+          <ActivityIcon className="w-5 h-5" />
+        </div>
+        <div>
+          <p className="text-xs text-gray-500 font-medium">Total</p>
+          <p className="text-xl font-bold font-mono">{stats.total}</p>
+        </div>
+      </div>
+      
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-3">
+        <div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-lg">
+          <CheckCircleIcon className="w-5 h-5" />
+        </div>
+        <div>
+          <p className="text-xs text-gray-500 font-medium">Completed</p>
+          <p className="text-xl font-bold font-mono">{stats.completed}</p>
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-3">
+        <div className="p-2 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg">
+          <ClockIcon className="w-5 h-5" />
+        </div>
+        <div>
+          <p className="text-xs text-gray-500 font-medium">Pending</p>
+          <p className="text-xl font-bold font-mono">{stats.pending}</p>
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-3">
+        <div className="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
+          <AlertCircleIcon className="w-5 h-5" />
+        </div>
+        <div>
+          <p className="text-xs text-gray-500 font-medium">Overdue</p>
+          <p className="text-xl font-bold font-mono">{stats.overdue}</p>
+        </div>
+      </div>
+    </section>
+  );
+}

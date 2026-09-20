@@ -6,7 +6,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent, ReactElement } from 'react';
-import { SearchIcon } from './Icons';
+import { SearchIcon } from '../../components/Icons';
 
 export interface Command {
   id: string;
@@ -124,6 +124,7 @@ export function CommandPalette({ open, commands, onClose }: CommandPaletteProps)
             placeholder="Type a command or search…"
             role="combobox"
             aria-expanded="true"
+            aria-autocomplete="list"
             aria-controls="command-listbox"
             aria-activedescendant={activeCommand ? `cmd-${activeIndex}` : undefined}
             aria-label="Search commands"
