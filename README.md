@@ -1,5 +1,7 @@
 # FocusList
 
+[![CI](https://github.com/Udbhav7002/focuslist-todo/actions/workflows/ci.yml/badge.svg)](https://github.com/Udbhav7002/focuslist-todo/actions/workflows/ci.yml)
+
 A frontend-only to-do app built with React 18, TypeScript, Vite, and Tailwind CSS. State is managed with Zustand, long lists are virtualized with TanStack Virtual, and everything persists to `localStorage` — there is no backend.
 
 ## Getting started
