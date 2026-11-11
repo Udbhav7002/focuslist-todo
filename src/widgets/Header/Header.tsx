@@ -3,6 +3,7 @@ import { useTodoStore } from '../../app/store/useTodoStore';
 import { useTheme } from '../../shared/hooks/useTheme';
 import { DownloadIcon, UploadIcon, MonitorIcon, SunIcon, MoonIcon } from '../../components/Icons';
 import { todayISO } from '../../entities/todo/lib/dateUtils';
+import { normalizeTodos } from '../../entities/todo/lib/todoUtils';
 import { useToastStore } from '../../app/store/useToastStore';
 
 const HEADER_BTN =
@@ -44,12 +45,13 @@ export function Header() {
         const parsed: unknown = JSON.parse(await file.text());
         const payload = parsed as { todos?: unknown };
         const list = Array.isArray(parsed) ? parsed : payload.todos;
-        if (!Array.isArray(list) || list.length === 0) {
+        const normalized = normalizeTodos(list);
+        if (normalized.length === 0) {
           showToast('No valid tasks found in that file');
           return;
         }
-        importTodos(list as any); // normalization skipped for brevity in this rewrite phase
-        showToast(`Imported ${list.length} tasks`);
+        importTodos(normalized);
+        showToast(`Imported ${normalized.length} tasks`);
       } catch {
         showToast('Import failed — not a valid JSON file');
       }

@@ -23,7 +23,9 @@ export function useTheme() {
   useEffect(() => {
     try {
       localStorage.setItem(THEME_STORAGE_KEY, theme);
-    } catch {}
+    } catch {
+      // Storage may be unavailable (private browsing); non-fatal.
+    }
   }, [theme]);
 
   useEffect(() => {
