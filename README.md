@@ -94,3 +94,9 @@ Export produces a strictly typed JSON payload:
 ```
 
 Import validates the array, bypassing malformed data to guarantee absolute stability.
+
+---
+
+## 📄 License
+
+Released under the [MIT License](LICENSE).
